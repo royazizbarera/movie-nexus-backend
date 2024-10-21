@@ -1,212 +1,214 @@
 import movieService from "../services/MovieService";
 import ResponseApi from "../config/ResponseApi";
 import HttpStatus from "../config/constants/HttpStatus";
-import { Response, Request } from "express";
+import {Response, Request} from "express";
 
 class MovieController {
-  async createMovie(req: Request, res: Response) {
-    try {
-      const movieData = req.body;
-      const newMovie = await movieService.createMovie(movieData);
+    /**
+     * Handles the creation of a new movie.
+     * @param req - The HTTP request object, containing movie data in the body.
+     * @param res - The HTTP response object.
+     * @returns A JSON response with the status of movie creation.
+     */
+    async createMovie(req: Request, res: Response): Promise<Response> {
+        const movieData = req.body;
 
-      return res.json(
-        ResponseApi({
-          code: HttpStatus.CREATED,
-          message: "Movie created successfully",
-          data: newMovie,
-          version: 1.0,
-        })
-      );
-    } catch (error) {
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
-        ResponseApi({
-          code: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: "Failed to create movie",
-          errors: error,
-          version: 1.0,
-        })
-      );
+        try {
+            const newMovie = await movieService.createMovie(movieData);
+            return res.status(HttpStatus.CREATED).json(
+                ResponseApi({
+                    code: HttpStatus.CREATED,
+                    message: "Movie created successfully",
+                    data: newMovie,
+                    version: 1.0,
+                })
+            );
+        } catch (error) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
+                ResponseApi({
+                    code: HttpStatus.INTERNAL_SERVER_ERROR,
+                    message: "Failed to create movie",
+                    errors: error,
+                    version: 1.0,
+                })
+            );
+        }
     }
-  }
 
-  async getMovies(req: Request, res: Response) {
-    try {
-      const page = Math.max(parseInt(req.query.page as string) || 1, 1);
-      const pageSize = Math.min(
-        parseInt(req.query.pageSize as string) || 24,
-        24
-      ); // Max 20 untuk pageSize
+    /**
+     * Retrieves a list of movies with pagination, sorting, and filtering options.
+     * @param req - The HTTP request object containing query parameters.
+     * @param res - The HTTP response object.
+     * @returns A JSON response with the list of movies and pagination details.
+     */
+    async getMovies(req: Request, res: Response): Promise<Response> {
+        const {
+            page = "1",
+            pageSize = "24",
+            searchTerm = "",
+            genre = "",
+            country = "",
+            actor = "",
+            year = "",
+            award = "",
+            director = "",
+            sortBy = "title",
+            sortOrder = "asc",
+            filters = [],
+        } = req.query;
 
-      const searchTerm = (req.query.searchTerm as string) || "";
-      console.log("searchTerm", searchTerm);
-      const genreArray =
-        typeof req.query.genres === "string" ? req.query.genres.split(",") : [];
-        const genre = (req.query.genre as string) || "";
-      const country = (req.query.country as string) || "";
-      const sortBy = (req.query.sortBy as string) || "title";
-      const sortOrder =
-        (req.query.sortOrder as string)?.toLowerCase() === "desc"
-          ? "desc"
-          : "asc";
-      const filters = Array.isArray(req.query.filters) ? req.query.filters : [];
+        const parsedPage = Math.max(parseInt(page as string), 1);
+        const parsedPageSize = Math.min(parseInt(pageSize as string), 24);
 
-      const [movies, totalItems] = await Promise.all([
-        movieService.getMovies2({
-          page,
-          pageSize,
-          params: {
-            searchTerm,
-            genres: genreArray,
-            country,
-            sortBy,
-            sortOrder,
-            filters,
-            genre,
-          },
-        }),
-        movieService.countMovies(),
-      ]);
+        const parsedSortOrder: "asc" | "desc" = sortOrder === "desc" ? "desc" : "asc";
+        const parsedFilters = Array.isArray(filters) ? filters : [];
 
-      return res.json(
-        ResponseApi({
-          code: HttpStatus.OK,
-          message: "Movies fetched successfully",
-          data: movies,
-          version: 1.0,
-          pagination: {
-            page,
-            pageSize,
-            totalItems,
-            totalPages: Math.ceil(totalItems / pageSize),
-          },
-        })
-      );
-    } catch (error) {
-      console.error("Error fetching movies:", error);
-      return res.json(
-        ResponseApi({
-          code: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: "Failed to fetch movies",
-          errors: error instanceof Error ? error.message : String(error),
-          version: 1.0,
-        })
-      );
+        if (parseInt(year as string) < 1900) {
+            return res.status(HttpStatus.BAD_REQUEST).json(
+                ResponseApi({
+                    code: HttpStatus.BAD_REQUEST,
+                    message: "Year must be a valid number greater than 1900",
+                    version: 1.0,
+                })
+            );
+        }
+
+        try {
+            const [movies, totalItems] = await Promise.all([
+                movieService.getMovies({
+                    page: parsedPage,
+                    pageSize: parsedPageSize,
+                    params: {
+                        searchTerm: searchTerm as string,
+                        country: country as string,
+                        actor: actor as string,
+                        year: parseInt(year as string),
+                        award: award as string,
+                        director: director as string,
+                        sortBy: sortBy as string,
+                        sortOrder: parsedSortOrder,
+                        filters: parsedFilters,
+                        genre: genre as string,
+                    },
+                }),
+                movieService.countMovies(),
+            ]);
+
+            return res.json(
+                ResponseApi({
+                    code: HttpStatus.OK,
+                    message: "Movies fetched successfully",
+                    data: movies,
+                    version: 1.0,
+                    pagination: {
+                        page: parsedPage,
+                        pageSize: parsedPageSize,
+                        totalItems,
+                        totalPages: Math.ceil(totalItems / parsedPageSize),
+                    },
+                })
+            );
+        } catch (error) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
+                ResponseApi({
+                    code: HttpStatus.INTERNAL_SERVER_ERROR,
+                    message: "Failed to fetch movies",
+                    errors: error instanceof Error ? error.message : String(error),
+                    version: 1.0,
+                })
+            );
+        }
     }
-  }
 
-  async getMovieById(req: Request, res: Response) {
-    try {
-      const movie = await movieService.getMovieById(parseInt(req.params.id));
-      return res.json(
-        ResponseApi({
-          code: HttpStatus.OK,
-          message: "Movie fetched successfully",
-          data: movie,
-          version: 1.0,
-        })
-      );
-    } catch (error) {
-      return res.json(
-        ResponseApi({
-          code: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: "Failed to fetch movie",
-          errors: error,
-          version: 1.0,
-        })
-      );
+    /**
+     * Retrieves a movie by its ID.
+     * @param req - The HTTP request object containing the movie ID as a parameter.
+     * @param res - The HTTP response object.
+     * @returns A JSON response with the movie data.
+     */
+    async getMovieById(req: Request, res: Response): Promise<Response> {
+        const movieId = parseInt(req.params.id);
+
+        try {
+            const movie = await movieService.getMovieById(movieId);
+            return res.json(
+                ResponseApi({
+                    code: HttpStatus.OK,
+                    message: "Movie fetched successfully",
+                    data: movie,
+                    version: 1.0,
+                })
+            );
+        } catch (error) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
+                ResponseApi({
+                    code: HttpStatus.INTERNAL_SERVER_ERROR,
+                    message: "Failed to fetch movie",
+                    errors: error instanceof Error ? error.message : String(error),
+                    version: 1.0,
+                })
+            );
+        }
     }
-  }
 
-  async updateMovieById(req: Request, res: Response) {
-    try {
-      const movieId = parseInt(req.params.id);
-      const movieData = req.body;
-      const updatedMovie = await movieService.updateMovieById(
-        movieId,
-        movieData
-      );
+    /**
+     * Updates a movie by its ID.
+     * @param req - The HTTP request object containing the movie ID as a parameter and the updated movie data in the body.
+     * @param res - The HTTP response object.
+     * @returns A JSON response with the updated movie data.
+     */
+    async updateMovieById(req: Request, res: Response): Promise<Response> {
+        const movieId = parseInt(req.params.id);
+        const movieData = req.body;
 
-      return res.json(
-        ResponseApi({
-          code: HttpStatus.OK,
-          message: "Movie updated successfully",
-          data: updatedMovie,
-          version: 1.0,
-        })
-      );
-    } catch (error) {
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
-        ResponseApi({
-          code: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: "Failed to update movie",
-          errors: error,
-          version: 1.0,
-        })
-      );
+        try {
+            const updatedMovie = await movieService.updateMovieById(movieId, movieData);
+
+            return res.json(ResponseApi({
+                code: HttpStatus.OK,
+                message: "Movie updated successfully",
+                data: updatedMovie,
+                version: 1.0,
+            }));
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(ResponseApi({
+                code: HttpStatus.INTERNAL_SERVER_ERROR,
+                message: "Failed to update movie",
+                errors: errorMessage,
+                version: 1.0,
+            }));
+        }
     }
-  }
 
-  async deleteMovieById(req: Request, res: Response) {
-    try {
-      const movieId = parseInt(req.params.id);
-      const updatedMovie = await movieService.deleteMovieById(movieId);
+    /**
+     * Deletes a movie by its ID.
+     * @param req - The HTTP request object containing the movie ID as a parameter.
+     * @param res - The HTTP response object.
+     * @returns A JSON response indicating the result of the delete operation.
+     */
+    async deleteMovieById(req: Request, res: Response): Promise<Response> {
+        const movieId = parseInt(req.params.id);
 
-      return res.json(
-        ResponseApi({
-          code: HttpStatus.OK,
-          message: "Movie deleted successfully",
-          data: updatedMovie,
-          version: 1.0,
-        })
-      );
-    } catch (error) {
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
-        ResponseApi({
-          code: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: "Failed to delete movie",
-          errors: error,
-          version: 1.0,
-        })
-      );
+        try {
+            const deletedMovie = await movieService.deleteMovieById(movieId);
+
+            return res.json(ResponseApi({
+                code: HttpStatus.OK,
+                message: "Movie deleted successfully",
+                data: deletedMovie,
+                version: 1.0,
+            }));
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(ResponseApi({
+                code: HttpStatus.INTERNAL_SERVER_ERROR,
+                message: "Failed to delete movie",
+                errors: errorMessage,
+                version: 1.0,
+            }));
+        }
     }
-  }
-
-  // async searchMovies(req: Request, res: Response) {
-  //   try {
-  //     // Ambil parameter query dari request
-  //     const { searchTerm, genres, country, sortBy, sortOrder } = req.query;
-  //     // Jika genres adalah string, ubah menjadi array dengan split. Jika tidak, atur sebagai array kosong.
-  //     const genreArray = typeof genres === "string" ? genres.split(",") : [];
-
-  //     // Memanggil controller method untuk melakukan pencarian
-  //     const movies = await movieService.searchMovies({
-  //       searchTerm: searchTerm as string, // pastikan bahwa search adalah string
-  //       genres: genreArray, // gunakan array genres yang sudah diparsing
-  //       country: country as string, // pastikan bahwa country adalah string
-  //       sortBy: sortBy as string, // pastikan bahwa sortBy adalah string
-  //       sortOrder: sortOrder as "asc" | "desc", // pastikan bahwa sortOrder adalah string
-  //     });
-
-  //     return res.json(
-  //       ResponseApi({
-  //         code: HttpStatus.OK,
-  //         message: "Movie searched successfully",
-  //         data: movies,
-  //         version: 1.0,
-  //       })
-  //     );
-  //   } catch (error) {
-  //     // Tangani error dan kirim respons kesalahan
-  //     return res.status(500).json(
-  //       ResponseApi({
-  //         code: HttpStatus.INTERNAL_SERVER_ERROR,
-  //         message: "Failed to search movies",
-  //         errors: error,
-  //         version: 1.0,
-  //       })
-  //     );
-  //   }
-  // }
 }
 
 const movieController = new MovieController();

@@ -12,6 +12,10 @@ export const users: UserModel[] = Array.from({ length: 100 }, (_, index) => {
     password: password,
     photoProfile: "https://picsum.photos/seed/human/1080/1080",
     provider: "email",
+    role: "user",
+    isVerified: true,
+    verificationCode: null,
+    verificationRequestDate: null,
   };
 });
 

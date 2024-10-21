@@ -1,9 +1,12 @@
 export default interface SearchParams {
-  searchTerm?: string; // Kata kunci pencarian
-  genres?: string[]; // Filter berdasarkan genre (lebih dari satu)
-  country?: string; // Filter berdasarkan negara
-  sortBy?: string; // Sorting berdasarkan field
-  sortOrder?: "asc" | "desc"; // Urutan sort
-  filters?: any[];
-  genre?: string;
+    searchTerm?: string;
+    country?: string;
+    actor?: string;
+    year?: number;
+    award?: string;
+    director?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    filters?: any[];
+    genre?: string;
 }
