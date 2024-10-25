@@ -1,12 +1,12 @@
 {
-  "name": "backend-movie-simple",
+  "name": "backend-movie-nexus",
   "version": "1.0.0",
-  "description": "BE for Movie Simple Application",
+  "description": "BE for Movie Nexus Application",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npx tsc",
-    "start": "node dist/index.js",
+    "start": "node src/index.ts",
     "dev": "nodemon src/index.ts"
   },
   "author": "Roy Aziz Barera",
