@@ -9,7 +9,7 @@ export default function MovieCardsLoading() {
     <CardGridLayout>
       {[...Array(12)].map((_, index) => (
         <CardGridLayoutItem key={index}>
-          <MemoizedMovieCard loading={true} />
+          <MemoizedMovieCard loading={true} canClick={false}/>
         </CardGridLayoutItem>
       ))}
     </CardGridLayout>

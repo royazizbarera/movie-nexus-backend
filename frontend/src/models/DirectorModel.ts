@@ -17,3 +17,12 @@ export interface DirectorModelTable {
   photoUrl: string;
   country: string;
 }
+
+export interface DirectorParamsModel {
+  page?: number;
+  pageSize?: number;
+  searchTerm?: string;
+  country?: string;
+  sortBy?: string;
+  sortOrder?: string;
+}

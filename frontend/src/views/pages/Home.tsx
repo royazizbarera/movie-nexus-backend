@@ -32,12 +32,10 @@ export default function Home() {
           if (page === res.pagination.totalPages) {
             setHasMore(false);
           }
+          setIsLoading(false);
         })
         .catch((error) => {});
-    } catch (error: any) {
-    } finally {
-      setIsLoading(false);
-    }
+    } catch (error: any) {}
   };
 
   useEffect(() => {
@@ -70,7 +68,6 @@ export default function Home() {
       <AppAppBar />
       <MainLayout>
         <ContentLayout>
-          {isLoading && <Typography>Loading...</Typography>}
           {!isLoading && movies.length > 0 && (
             <BackgroundTrailer
               backgroundUrl={movies[currentTrailerIndex].backdropUrl}
@@ -147,6 +144,63 @@ export default function Home() {
                             <CarouselCardItem />
                           )),
                         }}
+                      </Box>
+                      {/* Child grid */}
+                    </Grid>
+                  </Grid>
+                </Box>
+              </ContentLayout>
+            </BackgroundTrailer>
+          )}
+          {isLoading && (
+            <BackgroundTrailer
+              backgroundUrl={"movies[currentTrailerIndex].backdropUrl"}
+            >
+              <ContentLayout giveSpace>
+                {/* Trailer */}
+                <Box position="relative" zIndex={1}>
+                  {/* Root */}
+                  <Grid
+                    container
+                    spacing={2}
+                    alignItems="stretch"
+                    direction={{ xs: "column", md: "row" }}
+                    pb={2}
+                  >
+                    {/* Trailer */}
+                    <Grid xs={12} md={10}>
+                      <VideoTrailer
+                        sx={{
+                          m: 0,
+                          p: 0,
+                          aspectRatio: "18/9",
+                        }}
+                      />
+                    </Grid>
+
+                    {/* Next Trailer */}
+                    <Grid xs={12} md={2}>
+                      {/* Carousel*/}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: {
+                            xs: "row",
+                            md: "column",
+                          },
+                          gap: 1,
+                          overflow: "auto",
+                          width: "100%",
+                          height: {
+                            xs: undefined,
+                            md: "76vh",
+                          },
+                          "::-webkit-scrollbar": { display: "none" },
+                        }}
+                      >
+                        {Array.from({ length: 5 }).map((movie) => (
+                          <CarouselCardItem />
+                        ))}
                       </Box>
                       {/* Child grid */}
                     </Grid>

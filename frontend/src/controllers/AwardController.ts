@@ -1,5 +1,5 @@
 import { BaseController } from './BaseController';
-import { AwardModel } from '../models/AwardModel';
+import { AwardModel, AwardParamsModel } from '../models/AwardModel';
 import { useAuthStore } from '../contexts/authStore'; // Asumsikan ini store untuk mendapatkan data user
 import { BASE_API_URL } from '../configs/constants';
 
@@ -9,8 +9,8 @@ class AwardController extends BaseController {
   }
 
   // Mendapatkan daftar film dengan pagination
-  public async getAwards(page: number = 1, searchTerm?: string, award?: string) {
-    const params = { page, searchTerm, award };
+  public async getAwards(awardParamsModel?: AwardParamsModel | undefined) {
+    const params = { ...awardParamsModel};
     return this.get<AwardModel[]>('/', params);
   }
 

@@ -110,7 +110,7 @@ export default function DetailMovie() {
                   justifyContent={{ xs: "center", md: "space-between" }}
                   alignItems="center"
                   flexDirection={{ xs: "column", md: "row" }}
-                  mb={2}
+                  mt={2}
                   textAlign={{ xs: "center", md: "left" }}
                 >
                   <Box mb={{ xs: 2, md: 0 }}>
@@ -129,7 +129,7 @@ export default function DetailMovie() {
                         color: "common.white",
                       }}
                     >
-                      {movie.releaseDate} ・ {movie.rating} ・ {movie.duration}
+                      {movie.releaseDate} ・ {movie.rating} ・ {movie.duration || '-'}
                     </Typography>
                   </Box>
                   <Box display="flex" alignItems="center" gap={4}>
@@ -175,7 +175,6 @@ export default function DetailMovie() {
         <ContentLayout giveSpace>
           {/* Chip */}
           <Box
-            mt={4}
             sx={{
               display: "flex",
               flexWrap: "wrap",

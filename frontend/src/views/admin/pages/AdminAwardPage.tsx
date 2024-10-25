@@ -14,8 +14,17 @@ import BreadcrumbsDashboard from "../components/BreadcrumbsDashboard";
 import { AdminTableLayout } from "../layouts/AdminTableLayout";
 import GenericTable from "../components/GenericTable";
 import awardController from "../../../controllers/AwardController";
-import { AwardModel, AwardModelTable } from "../../../models/AwardModel";
+import {
+  AwardModel,
+  AwardModelTable,
+  AwardParamsModel,
+} from "../../../models/AwardModel";
 import countryController from "../../../controllers/CountryController";
+import { PaginationModel } from "../../../models/PaginationModel";
+import {
+  PAGE_SIZE_DROPDOWN,
+  SORT_ORDER_DROPDOWN,
+} from "../../../configs/constants";
 
 function convertAwardModelToTable(award: AwardModel): AwardModelTable {
   return {
@@ -26,24 +35,40 @@ function convertAwardModelToTable(award: AwardModel): AwardModelTable {
   };
 }
 
+const columns: any[] = [
+  {
+    key: "id",
+    label: "ID",
+    type: "number",
+    readonly: true,
+    width: 70,
+  },
+  { key: "name", label: "Name", type: "string" },
+  { key: "year", label: "Year", type: "date" },
+  { key: "country", label: "Country", type: "string_autocomplete" },
+];
+
 export default function AdminAwardPage() {
   const [awards, setAwards] = React.useState<AwardModelTable[]>([]);
   const [countries, setCountries] = React.useState<string[]>([]);
-  const [page, setPage] = React.useState(1);
-  const [totalItems, setTotalItems] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(24);
-  const [totalPages, setTotalPages] = React.useState(1);
 
-  const fetchAwards = async (page: number) => {
+  const [pagination, setPagination] = React.useState<PaginationModel>({
+    page: 1,
+    pageSize: 24,
+    totalItems: 0,
+    totalPages: 1,
+  });
+  const [awardParams, setAwardParams] = React.useState<AwardParamsModel>({
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  });
+
+  const fetchAwards = async (awardParamsModel: AwardParamsModel) => {
     try {
-      const response = await awardController.getAwards(page);
+      const response = await awardController.getAwards(awardParamsModel);
       const { data: awards, pagination } = response;
-
       setAwards(awards.map(convertAwardModelToTable));
-      setTotalItems(pagination!.totalItems);
-      setPageSize(pagination!.pageSize);
-      setTotalPages(pagination!.totalPages);
-      setPage(pagination!.page); // Set current page explicitly
+      setPagination(pagination!);
     } catch (error) {
       console.error("Error fetching awards:", error);
     }
@@ -51,10 +76,7 @@ export default function AdminAwardPage() {
 
   const fetchCountries = async () => {
     try {
-      const response = await countryController.getCountries(
-        undefined,
-        undefined
-      );
+      const response = await countryController.getCountries();
       const data = response.data;
       setCountries(data.map((country) => country.name));
     } catch (error) {
@@ -68,8 +90,8 @@ export default function AdminAwardPage() {
   }, []);
 
   React.useEffect(() => {
-    fetchAwards(page); // Pass current page to fetchAwards
-  }, [page]);
+    fetchAwards(awardParams); // Pass current page to fetchAwards
+  }, [awardParams]);
 
   const handleEditAward = async (updatedAward: AwardModelTable) => {
     try {
@@ -86,7 +108,10 @@ export default function AdminAwardPage() {
     try {
       const response = await awardController.deleteAward(award.id);
       setAwards((prevAwards) => prevAwards.filter((m) => m.id !== award.id));
-      setTotalItems((prevTotal) => prevTotal - 1); // Mengurangi total items
+      setPagination((prevPagination) => ({
+        ...prevPagination,
+        totalItems: prevPagination.totalItems - 1,
+      }));
       console.log("Award deleted successfully:", response.message);
       console.info("delete award with id: ", award.id);
     } catch (error) {
@@ -95,9 +120,16 @@ export default function AdminAwardPage() {
   };
 
   const handlePageChange = async (newPage: number) => {
-    setPage(newPage);
+    handleFilterChange("page", newPage);
   };
 
+  const handleFilterChange = (name: string, value: string | number) => {
+    setAwardParams((prevParams) => ({
+      ...prevParams,
+      [name]: value,
+    }));
+    console.info("Filter change: ", name, value);
+  };
   return (
     <CssVarsProvider disableTransitionOnChange>
       <CssBaseline />
@@ -126,28 +158,30 @@ export default function AdminAwardPage() {
           <GenericTable<AwardModelTable>
             title="Awards"
             data={awards}
-            columns={[
-              {
-                key: "id",
-                label: "ID",
-                type: "number",
-                readonly: true,
-                width: 70,
-              },
-              { key: "name", label: "Name", type: "string" },
-              { key: "year", label: "Year", type: "date" },
-              { key: "country", label: "Country", type: "string_autocomplete" },
-            ]}
+            columns={columns}
             options={{
               country: countries,
             }}
             onEdit={handleEditAward}
             onDelete={handleDeleteAward}
             onPageChange={handlePageChange}
-            page={page}
-            pageSize={pageSize}
-            totalItems={totalItems}
-            totalPages={totalPages}
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            totalItems={pagination.totalItems}
+            totalPages={pagination.totalPages}
+            filters={{
+              country: countries,
+              sortBy: columns.map((column) => column.key),
+              sortOrder: SORT_ORDER_DROPDOWN,
+              pageSize: PAGE_SIZE_DROPDOWN,
+            }}
+            onFilterChange={handleFilterChange}
+            applySearch
+            realtimeSearch
+            placeholderSearch="Search award..."
+            onSearchApply={(searchTerm) =>
+              handleFilterChange("searchTerm", searchTerm)
+            }
           />
 
           {/* <OrderList /> */}

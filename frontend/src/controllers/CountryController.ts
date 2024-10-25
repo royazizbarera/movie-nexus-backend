@@ -1,5 +1,5 @@
 import { BaseController } from "./BaseController";
-import { CountryModel } from "../models/CountryModel";
+import { CountryModel, CountryParamsModel } from "../models/CountryModel";
 import { useAuthStore } from "../contexts/authStore"; // Asumsikan ini store untuk mendapatkan data user
 import { BASE_API_URL } from "../configs/constants";
 
@@ -10,12 +10,9 @@ class CountryController extends BaseController {
 
   // Mendapatkan daftar film dengan pagination
   public async getCountries(
-    page: number | undefined,
-    pageSize: number | undefined,
-    searchTerm?: string,
-    country?: string
+    countryParamsModel?: CountryParamsModel | undefined
   ) {
-    const params = { page, searchTerm, country, pageSize };
+    const params = { ...countryParamsModel };
     return this.get<CountryModel[]>("/", params);
   }
 

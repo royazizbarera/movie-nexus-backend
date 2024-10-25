@@ -2,7 +2,7 @@
 
 
 import { BaseController } from './BaseController';
-import { DirectorModel } from '../models/DirectorModel';
+import { DirectorModel, DirectorParamsModel } from '../models/DirectorModel';
 import { useAuthStore } from '../contexts/authStore'; // Asumsikan ini store untuk mendapatkan data user
 import { BASE_API_URL } from '../configs/constants';
 
@@ -12,8 +12,8 @@ class DirectorController extends BaseController {
   }
 
   // Mendapatkan daftar film dengan pagination
-  public async getDirectors(page: number = 1, searchTerm?: string, director?: string) {
-    const params = { page, searchTerm, director };
+  public async getDirectors(directorParamsModel?: DirectorParamsModel | undefined) {
+    const params = { ...directorParamsModel};
     return this.get<DirectorModel[]>('/', params);
   }
 

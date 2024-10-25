@@ -14,7 +14,13 @@ import BreadcrumbsDashboard from "../components/BreadcrumbsDashboard";
 import { AdminTableLayout } from "../layouts/AdminTableLayout";
 import GenericTable from "../components/GenericTable";
 import countryController from "../../../controllers/CountryController";
-import { CountryModel, CountryModelTable } from "../../../models/CountryModel";
+import {
+  CountryModel,
+  CountryModelTable,
+  CountryParamsModel,
+} from "../../../models/CountryModel";
+import { PaginationModel } from "../../../models/PaginationModel";
+import { PAGE_SIZE_DROPDOWN, SORT_ORDER_DROPDOWN } from "../../../configs/constants";
 
 function convertCountryModelToTable(country: CountryModel): CountryModelTable {
   return {
@@ -23,31 +29,45 @@ function convertCountryModelToTable(country: CountryModel): CountryModelTable {
   };
 }
 
+const columns: any[] = [
+  {
+    key: "code",
+    label: "Code",
+    type: "number",
+    readonly: true,
+    width: 70,
+  },
+  { key: "name", label: "Name", type: "string", width: "100%" },
+];
+
 export default function AdminCountryPage() {
   const [countries, setCountries] = React.useState<CountryModelTable[]>([]);
-  const [page, setPage] = React.useState(1);
-  const [totalItems, setTotalItems] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(24);
-  const [totalPages, setTotalPages] = React.useState(1);
+  const [pagination, setPagination] = React.useState<PaginationModel>({
+    page: 1,
+    pageSize: 24,
+    totalItems: 0,
+    totalPages: 1,
+  });
+  const [countryParams, setCountryParams] = React.useState<CountryParamsModel>({
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  });
 
-  const fetchCountries = async (page: number) => {
+  const fetchCountries = async (countryParamsModel: CountryParamsModel) => {
     try {
-      const response = await countryController.getCountries(page, 24);
+      const response = await countryController.getCountries(countryParamsModel);
       const { data: countries, pagination } = response;
 
       setCountries(countries.map(convertCountryModelToTable));
-      setTotalItems(pagination!.totalItems);
-      setPageSize(pagination!.pageSize);
-      setTotalPages(pagination!.totalPages);
-      setPage(pagination!.page); // Set current page explicitly
+      setPagination(pagination!);
     } catch (error) {
       console.error("Error fetching countries:", error);
     }
   };
 
   React.useEffect(() => {
-    fetchCountries(page); // Pass current page to fetchCountries
-  }, [page]);
+    fetchCountries(countryParams); // Pass current countryParams to fetchCountries
+  }, [countryParams]);
 
   const handleEditCountry = async (updatedCountry: CountryModelTable) => {
     try {
@@ -66,7 +86,10 @@ export default function AdminCountryPage() {
       setCountries((prevCountries) =>
         prevCountries.filter((m) => m.code !== country.code)
       );
-      setTotalItems((prevTotal) => prevTotal - 1); // Mengurangi total items
+      setPagination((prevPagination) => ({
+        ...prevPagination,
+        totalItems: prevPagination.totalItems - 1,
+      }));
       console.log("Country deleted successfully:", response.message);
       console.info("delete country with code: ", country.code);
     } catch (error) {
@@ -75,7 +98,15 @@ export default function AdminCountryPage() {
   };
 
   const handlePageChange = async (newPage: number) => {
-    setPage(newPage);
+    handleFilterChange("page", newPage);
+  };
+
+  const handleFilterChange = (name: string, value: string | number) => {
+    setCountryParams((prevParams) => ({
+      ...prevParams,
+      [name]: value,
+    }));
+    console.info("Filter change: ", name, value);
   };
 
   return (
@@ -105,23 +136,27 @@ export default function AdminCountryPage() {
           <GenericTable<CountryModelTable>
             title="Countries"
             data={countries}
-            columns={[
-              {
-                key: "code",
-                label: "Code",
-                type: "number",
-                readonly: true,
-                width: 70,
-              },
-              { key: "name", label: "Name", type: "string", width: "100%" },
-            ]}
+            columns={columns}
             onEdit={handleEditCountry}
             onDelete={handleDeleteCountry}
             onPageChange={handlePageChange}
-            page={page}
-            pageSize={pageSize}
-            totalItems={totalItems}
-            totalPages={totalPages}
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            totalItems={pagination.totalItems}
+            totalPages={pagination.totalPages}
+            //
+            filters={{
+              sortBy: columns.map((column) => column.key),
+              sortOrder: SORT_ORDER_DROPDOWN,
+              pageSize: PAGE_SIZE_DROPDOWN,
+            }}
+            onFilterChange={handleFilterChange}
+            applySearch
+            realtimeSearch
+            placeholderSearch="Search country..."
+            onSearchApply={(searchTerm) =>
+              handleFilterChange("searchTerm", searchTerm)
+            }
           />
 
           {/* <OrderList /> */}

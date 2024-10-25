@@ -31,3 +31,15 @@ export interface UserModelTable {
   verificationCodeExpired?: string;
   verificationRequestDate?: string;
 };
+
+
+export interface UserParamsModel {
+  page?: number;
+  pageSize?: number;
+  searchTerm?: string;
+  role?: string;
+  isVerified?: boolean;
+  country?: string;
+  sortBy?: string;
+  sortOrder?: string;
+}

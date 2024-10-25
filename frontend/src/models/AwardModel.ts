@@ -14,3 +14,13 @@ export interface AwardModelTable {
   year: string;
   country: string;
 }
+
+
+export interface AwardParamsModel {
+  page?: number;
+  pageSize?: number;
+  searchTerm?: string;
+  country?: string;
+  sortBy?: string;
+  sortOrder?: string;
+}

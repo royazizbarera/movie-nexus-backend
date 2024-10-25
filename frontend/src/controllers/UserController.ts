@@ -1,5 +1,5 @@
 import { BaseController } from './BaseController';
-import { UserModel } from '../models/UserModel';
+import { UserModel, UserParamsModel } from '../models/UserModel';
 import { useAuthStore } from '../contexts/authStore'; // Asumsikan ini store untuk mendapatkan data user
 import { BASE_API_URL } from '../configs/constants';
 
@@ -9,8 +9,8 @@ class UserController extends BaseController {
   }
 
   // Mendapatkan daftar film dengan pagination
-  public async getUsers(page: number = 1, searchTerm?: string, user?: string) {
-    const params = { page, searchTerm, user };
+  public async getUsers(userParamsModel?: UserParamsModel | undefined) {
+    const params = { ...userParamsModel};
     return this.get<UserModel[]>('/', params);
   }
 
