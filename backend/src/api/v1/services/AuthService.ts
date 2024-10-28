@@ -3,291 +3,292 @@
 import prisma from "../config/client";
 
 import bcrypt from "bcryptjs";
-import { generateVerificationCode } from "../helpers/generateVerificationCode";
+import {generateVerificationCode} from "../helpers/generateVerificationCode";
 
 class AuthService {
-  private static instance: AuthService;
+    private static instance: AuthService;
 
-  private constructor() {}
-
-  public static getInstance(): AuthService {
-    if (!AuthService.instance) {
-      AuthService.instance = new AuthService();
+    private constructor() {
     }
 
-    return AuthService.instance;
-  }
+    public static getInstance(): AuthService {
+        if (!AuthService.instance) {
+            AuthService.instance = new AuthService();
+        }
 
-  public async signUpEmailAndPassword(
-    username: string,
-    email: string,
-    password: string
-  ) {
-    // Jika ada yang kosong maka throw error
-    if (!username || !email || !password) {
-      throw new Error("All fields are required");
+        return AuthService.instance;
     }
 
-    // Jika password kurang dari 6 karakter maka throw error
-    if (password.length < 6) {
-      throw new Error("Password must be at least 6 characters long");
+    public async signUpEmailAndPassword(
+        username: string,
+        email: string,
+        password: string
+    ) {
+        // Jika ada yang kosong maka throw error
+        if (!username || !email || !password) {
+            throw new Error("All fields are required");
+        }
+
+        // Jika password kurang dari 6 karakter maka throw error
+        if (password.length < 6) {
+            throw new Error("Password must be at least 6 characters long");
+        }
+
+        try {
+            // Cek apakah sudah ada pengguna dengan email tersebut throw error jika ada
+            const existingUser = await prisma.user.findFirst({
+                where: {
+                    email,
+                },
+            });
+            if (existingUser) {
+                throw new Error("User with this email already exists");
+            }
+
+            // hash password
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const verificationCode = generateVerificationCode();
+
+            // jika belum ada buat pengguna baru
+            const newUser = await prisma.user.create({
+                data: {
+                    provider: "email",
+                    username: username,
+                    email: email,
+                    password: hashedPassword,
+                    verificationCode: verificationCode,
+                    verificationCodeExpired: new Date(
+                        new Date().getTime() + 24 * 60 * 60 * 1000
+                    ), // 24 jam dari sekarang
+                },
+            });
+
+            const userResponse = {...newUser, password: undefined};
+
+            return userResponse;
+        } catch (error: any) {
+            throw new Error(error || "Failed to create user");
+        }
     }
 
-    try {
-      // Cek apakah sudah ada pengguna dengan email tersebut throw error jika ada
-      const existingUser = await prisma.user.findFirst({
-        where: {
-          email,
-        },
-      });
-      if (existingUser) {
-        throw new Error("User with this email already exists");
-      }
+    // TODO: Implement sign in with email and password service
+    public async signInWithEmailAndPassword(email: string, password: string) {
+        // Jika ada yang kosong maka throw error
+        if (!email || !password) {
+            throw new Error("All fields are required");
+        }
 
-      // hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const verificationCode = generateVerificationCode();
+        try {
+            // Cek apakah sudah ada pengguna dengan email tersebut throw error jika tidak ada
+            const user = await prisma.user.findFirst({
+                where: {
+                    email,
+                },
+            });
+            if (!user) {
+                throw new Error("User with this email does not exist");
+            }
 
-      // jika belum ada buat pengguna baru
-      const newUser = await prisma.user.create({
-        data: {
-          provider: "email",
-          username: username,
-          email: email,
-          password: hashedPassword,
-          verificationCode: verificationCode,
-          verificationCodeExpired: new Date(
-            new Date().getTime() + 24 * 60 * 60 * 1000
-          ), // 24 jam dari sekarang
-        },
-      });
+            // bandingkan password
+            const isPasswordMatch = await bcrypt.compare(password, user.password!);
+            if (!isPasswordMatch) {
+                throw new Error("Invalid password");
+            }
 
-      const userResponse = { ...newUser, password: undefined };
+            // hilangkan password
+            const userResponse = {...user, password: undefined};
 
-      return userResponse;
-    } catch (error: any) {
-      throw new Error(error || "Failed to create user");
-    }
-  }
-
-  // TODO: Implement sign in with email and password service
-  public async signInWithEmailAndPassword(email: string, password: string) {
-    // Jika ada yang kosong maka throw error
-    if (!email || !password) {
-      throw new Error("All fields are required");
+            return userResponse;
+        } catch (error: any) {
+            throw new Error(error || "Failed to sign in user");
+        }
     }
 
-    try {
-      // Cek apakah sudah ada pengguna dengan email tersebut throw error jika tidak ada
-      const user = await prisma.user.findFirst({
-        where: {
-          email,
-        },
-      });
-      if (!user) {
-        throw new Error("User with this email does not exist");
-      }
+    // is verified
+    public async isVerifiedUser(email: string) {
+        try {
+            const user = await prisma.user.findFirst({
+                where: {
+                    email: email,
+                },
+            });
 
-      // bandingkan password
-      const isPasswordMatch = await bcrypt.compare(password, user.password!);
-      if (!isPasswordMatch) {
-        throw new Error("Invalid password");
-      }
+            if (!user) {
+                throw new Error("User not found");
+            }
 
-      // hilangkan password
-      const userResponse = { ...user, password: undefined };
+            if (!user.isVerified) {
+                return false;
+            }
 
-      return userResponse;
-    } catch (error: any) {
-      throw new Error(error || "Failed to sign in user");
+            return true;
+        } catch (error: any) {
+            throw new Error(error || "Failed to verify user");
+        }
     }
-  }
 
-  // is verified
-  public async isVerifiedUser(email: string) {
-    try {
-      const user = await prisma.user.findFirst({
-        where: {
-          email: email,
-        },
-      });
+    // TODO: Implement verify user service using verification code
+    public async verifyUser(verificationCode: string) {
+        try {
+            const user = await prisma.user.findFirst({
+                where: {
+                    verificationCode,
+                    verificationCodeExpired: {
+                        gte: new Date(),
+                    },
+                },
+            });
 
-      if (!user) {
-        throw new Error("User not found");
-      }
+            if (!user) {
+                throw new Error("Invalid verification code");
+            }
 
-      if (!user.isVerified) {
-        return false;
-      }
+            if (user.verificationCodeExpired! < new Date()) {
+                throw new Error("Verification code expired");
+            }
 
-      return true;
-    } catch (error: any) {
-      throw new Error(error || "Failed to verify user");
+            const updatedUser = await prisma.user.update({
+                where: {
+                    id: user.id,
+                },
+                data: {
+                    isVerified: true,
+                    verificationCode: null,
+                    verificationCodeExpired: null,
+                },
+            });
+
+            // hilangkan password
+            const userResponse = {...updatedUser, password: undefined};
+
+            return userResponse;
+        } catch (error: any) {
+            throw new Error(error || "Failed to verify user");
+        }
     }
-  }
 
-  // TODO: Implement verify user service using verification code
-  public async verifyUser(verificationCode: string) {
-    try {
-      const user = await prisma.user.findFirst({
-        where: {
-          verificationCode,
-          verificationCodeExpired: {
-            gte: new Date(),
-          },
-        },
-      });
+    // TODO: Implement resend verification code service
+    public async resendVerificationCode(email: string) {
+        try {
+            const user = await prisma.user.findFirst({
+                where: {
+                    email: email,
+                },
+            });
 
-      if (!user) {
-        throw new Error("Invalid verification code");
-      }
+            if (!user) {
+                throw new Error("User not found");
+            }
 
-      if (user.verificationCodeExpired! < new Date()) {
-        throw new Error("Verification code expired");
-      }
+            if (user.isVerified) {
+                throw new Error("User already verified");
+            }
 
-      const updatedUser = await prisma.user.update({
-        where: {
-          id: user.id,
-        },
-        data: {
-          isVerified: true,
-          verificationCode: null,
-          verificationCodeExpired: null,
-        },
-      });
+            const verificationCode = generateVerificationCode();
 
-      // hilangkan password
-      const userResponse = { ...updatedUser, password: undefined };
+            const newUser = await prisma.user.update({
+                where: {
+                    email: email,
+                },
+                data: {
+                    verificationCode,
+                    verificationCodeExpired: new Date(
+                        new Date().getTime() + 24 * 60 * 60 * 1000
+                    ), // 24 jam dari sekarang
+                },
+            });
 
-      return userResponse;
-    } catch (error: any) {
-      throw new Error(error || "Failed to verify user");
+            // hilangkan password
+            const userResponse = {...newUser, password: undefined};
+
+            return userResponse;
+        } catch (error: any) {
+            throw new Error(error || "Failed to send verification code");
+        }
     }
-  }
 
-  // TODO: Implement resend verification code service
-  public async resendVerificationCode(email: string) {
-    try {
-      const user = await prisma.user.findFirst({
-        where: {
-          email: email,
-        },
-      });
+    // TODO: Implement delete user service using email
+    public async deleteUser(email: string) {
+        try {
+            const user = await prisma.user.findFirst({
+                where: {
+                    email: email,
+                },
+            });
 
-      if (!user) {
-        throw new Error("User not found");
-      }
+            if (!user) {
+                throw new Error("User not found");
+            }
 
-      if (user.isVerified) {
-        throw new Error("User already verified");
-      }
+            await prisma.user.delete({
+                where: {
+                    id: user.id,
+                },
+            });
 
-      const verificationCode = generateVerificationCode();
-
-      const newUser = await prisma.user.update({
-        where: {
-          email: email,
-        },
-        data: {
-          verificationCode,
-          verificationCodeExpired: new Date(
-            new Date().getTime() + 24 * 60 * 60 * 1000
-          ), // 24 jam dari sekarang
-        },
-      });
-
-      // hilangkan password
-      const userResponse = { ...newUser, password: undefined };
-
-      return userResponse;
-    } catch (error: any) {
-      throw new Error(error || "Failed to send verification code");
+            return true;
+        } catch (error: any) {
+            throw new Error(error || "Failed to delete user");
+        }
     }
-  }
 
-  // TODO: Implement delete user service using email
-  public async deleteUser(email: string) {
-    try {
-      const user = await prisma.user.findFirst({
-        where: {
-          email: email,
-        },
-      });
+    // TODO: Implement check auth service
+    public async checkAuth(email: string) {
+        try {
+            const user = await prisma.user.findFirst({
+                where: {
+                    email: email,
+                },
+            });
 
-      if (!user) {
-        throw new Error("User not found");
-      }
+            if (!user) {
+                throw new Error("User not found");
+            }
 
-      await prisma.user.delete({
-        where: {
-          id: user.id,
-        },
-      });
+            // hilangkan password
+            const userResponse = {...user, password: undefined};
 
-      return true;
-    } catch (error: any) {
-      throw new Error(error || "Failed to delete user");
+            return userResponse;
+        } catch (error: any) {
+            throw new Error(error || "Failed to check auth");
+        }
     }
-  }
 
-  // TODO: Implement check auth service
-  public async checkAuth(email: string) {
-    try {
-      const user = await prisma.user.findFirst({
-        where: {
-          email: email,
-        },
-      });
 
-      if (!user) {
-        throw new Error("User not found");
-      }
+    // TODO: Sign in with Google
+    public async signInWithGoogle(email: string, username: string) {
+        try {
+            // Cek apakah sudah ada pengguna dengan email tersebut throw error jika tidak ada
+            const user = await prisma.user.findFirst({
+                where: {
+                    email,
+                },
+            });
 
-      // hilangkan password
-      const userResponse = { ...user, password: undefined };
+            if (!user) {
+                // jika belum ada buat pengguna baru
+                const newUser = await prisma.user.create({
+                    data: {
+                        provider: "google",
+                        username: username,
+                        email: email,
+                        isVerified: true,
+                    },
+                });
 
-      return userResponse;
-    } catch (error: any) {
-      throw new Error(error || "Failed to check auth");
+                const userResponse = {...newUser, password: undefined};
+
+                return userResponse;
+            }
+
+            // hilangkan password
+            const userResponse = {...user, password: undefined};
+
+            return userResponse;
+        } catch (error: any) {
+            throw new Error(error || "Failed to sign in with Google");
+        }
     }
-  }
-
-
-  // TODO: Sign in with Google
-  public async signInWithGoogle(email: string, username: string) {
-    try {
-      // Cek apakah sudah ada pengguna dengan email tersebut throw error jika tidak ada
-      const user = await prisma.user.findFirst({
-        where: {
-          email,
-        },
-      });
-
-      if (!user) {
-        // jika belum ada buat pengguna baru
-        const newUser = await prisma.user.create({
-          data: {
-            provider: "google",
-            username: username,
-            email: email,
-            isVerified: true,
-          },
-        });
-
-        const userResponse = { ...newUser, password: undefined };
-
-        return userResponse;
-      }
-
-      // hilangkan password
-      const userResponse = { ...user, password: undefined };
-
-      return userResponse;
-    } catch (error: any) {
-      throw new Error(error || "Failed to sign in with Google");
-    }
-  }
 }
 
 const authService = AuthService.getInstance();
