@@ -1,5 +1,5 @@
 import { BaseController } from './BaseController';
-import { ActorModel } from '../models/ActorModel';
+import { ActorModel, ActorParamsModel } from '../models/ActorModel';
 import { useAuthStore } from '../contexts/authStore'; // Asumsikan ini store untuk mendapatkan data user
 import { BASE_API_URL } from '../configs/constants';
 
@@ -9,8 +9,8 @@ class ActorController extends BaseController {
   }
 
   // Mendapatkan daftar film dengan pagination
-  public async getActors(page: number = 1, searchTerm?: string, actor?: string) {
-    const params = { page, searchTerm, actor };
+  public async getActors(actorParamsModel?: ActorParamsModel | undefined) {
+    const params = { ...actorParamsModel };
     return this.get<ActorModel[]>('/', params);
   }
 

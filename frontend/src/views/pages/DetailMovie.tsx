@@ -24,11 +24,11 @@ import MovieCard from "../components/MovieCard";
 import ActorCard from "../components/ActorCard";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import movieController from "../../controllers/movieController";
 // import getTrailerMovie from "../../helpers/getTrailerMovie";
 import AppAppBar from "../components/AppAppBar";
 import BackgroundTrailer from "../components/movies/BackgroundTrailer";
 import VideoTrailer from "../components/movies/VideoTrailer";
+import movieController from "../../controllers/MovieController";
 
 export default function DetailMovie() {
   const { id } = useParams();
@@ -42,7 +42,7 @@ export default function DetailMovie() {
   // fetch using controller
   useEffect(() => {
     movieController
-      .getMovies({})
+      .getMovies()
       .then((res) => {
         setMovies(res.data);
       })
@@ -54,7 +54,7 @@ export default function DetailMovie() {
   useEffect(() => {
     // Ambil detail movie
     try {
-      movieController.getMovieById(id!).then((data) => {
+      movieController.getMovieById(parseInt(id!)).then((data) => {
         setMovie(data.data);
         setGenres(data.data.genres);
         setDirector(data.data.director);
@@ -110,7 +110,7 @@ export default function DetailMovie() {
                   justifyContent={{ xs: "center", md: "space-between" }}
                   alignItems="center"
                   flexDirection={{ xs: "column", md: "row" }}
-                  mb={2}
+                  mt={2}
                   textAlign={{ xs: "center", md: "left" }}
                 >
                   <Box mb={{ xs: 2, md: 0 }}>
@@ -129,7 +129,7 @@ export default function DetailMovie() {
                         color: "common.white",
                       }}
                     >
-                      {movie.releaseDate} ・ {movie.rating} ・ {movie.duration}
+                      {movie.releaseDate} ・ {movie.rating} ・ {movie.duration || '-'}
                     </Typography>
                   </Box>
                   <Box display="flex" alignItems="center" gap={4}>
@@ -175,7 +175,6 @@ export default function DetailMovie() {
         <ContentLayout giveSpace>
           {/* Chip */}
           <Box
-            mt={4}
             sx={{
               display: "flex",
               flexWrap: "wrap",
@@ -312,7 +311,7 @@ export default function DetailMovie() {
             </List>
           </Box>
 
-          <Typography level="title-lg">Similar Film Recomendation</Typography>
+          <Typography level="title-lg">Movies Recomendation</Typography>
           {/* Recomendation */}
           <Grid
             container

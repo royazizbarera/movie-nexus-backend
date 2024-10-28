@@ -17,6 +17,7 @@ interface MovieCardProps {
   rating?: number;
   year?: number;
   loading?: boolean;
+  canClick?: boolean;
 }
 
 export default function MovieCard({
@@ -26,6 +27,7 @@ export default function MovieCard({
   rating,
   year,
   loading,
+  canClick = true,
 }: MovieCardProps) {
   return (
     <Box sx={{ display: "flex", maxWidth: "200px", width: "100%" }}>
@@ -40,7 +42,7 @@ export default function MovieCard({
         }}
       >
         <CardOverflow variant="soft" sx={{ bgcolor: "background.level1" }}>
-          <Link to={`/movie/${id}`}>
+          <Link to={canClick ? `/movie/${id}` : "/"}>
             <IconButton
               aria-label="bookmark Bahamas Islands"
               variant="plain"
@@ -107,7 +109,7 @@ export default function MovieCard({
               <Skeleton loading={!title}>{title || "Title movie"}</Skeleton>
             </Typography>
             <Typography level="body-xs">
-              <Skeleton loading={!year}>{year || 2024}</Skeleton>
+              <Skeleton loading={!year}>{new Date(year!).getFullYear() || 2024}</Skeleton>
             </Typography>
           </CardContent>
         </CardOverflow>

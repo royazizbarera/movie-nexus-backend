@@ -1,368 +1,320 @@
-import {
-    Box,
-    Grid,
-    Select,
-    Option,
-    Button,
-    Input,
-    iconButtonClasses,
-    IconButton,
-} from "@mui/joy";
+import React from "react";
+
+import { Box, Grid, Button, Input, Autocomplete } from "@mui/joy";
 import MainLayout from "../layouts/MainLayout";
 import MovieCard from "../components/MovieCard";
-import KeyboardArrowDown from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
-import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 
-import {useState, useEffect} from "react";
-import {useNavigate} from "react-router-dom";
-
-//
-import movieController from "../../controllers/movieController";
 import AppAppBar from "../components/AppAppBar";
+import { MovieModel, MovieParamsModel } from "../../models/MovieModel";
+import { PaginationModel } from "../../models/PaginationModel";
+import movieController from "../../controllers/MovieController";
+import genreController from "../../controllers/GenreController";
+import actorController from "../../controllers/ActorController";
+import { GenreModel } from "../../models/GenreModel";
+import { ActorModel } from "../../models/ActorModel";
+import awardController from "../../controllers/AwardController";
+import { AwardModel } from "../../models/AwardModel";
+import countryController from "../../controllers/CountryController";
+import { CountryModel } from "../../models/CountryModel";
+import PaginationComponent from "../admin/components/PaginationComponent";
+import getYearsFromXtoY from "../../helpers/getYearsFromXtoY";
+import {
+  PAGE_SIZE_DROPDOWN,
+  SORT_ORDER_DROPDOWN,
+} from "../../configs/constants";
 
 const styleSelect = {
-    width: "100%",
-    [`& .MuiSelect-indicator`]: {
-        transition: "0.2s",
-        [`&.Mui-expanded`]: {
-            transform: "rotate(-180deg)",
-        },
+  width: "100%",
+  [`& .MuiSelect-indicator`]: {
+    transition: "0.2s",
+    [`&.Mui-expanded`]: {
+      transform: "rotate(-180deg)",
     },
+  },
 };
 
 export default function MoviesPage() {
-    const [selectedFilters, setSelectedFilters] = useState<{
-        [key: string]: string;
-    }>({});
-    // const [paramString, setParamString] = useState<string>("");
-    const [searchQuery, setSearchQuery] = useState<string>("");
-    const navigate = useNavigate();
+  const [movies, setMovies] = React.useState<MovieModel[]>([]);
+  const [pagination, setPagination] = React.useState<PaginationModel>({
+    page: 1,
+    pageSize: 24,
+    totalItems: 0,
+    totalPages: 1,
+  });
 
-    // movies
-    const [movies, setMovies] = useState<any[]>([]);
-    // paginasi
-    const [page, setPage] = useState<number>(1);
-    const [totalPage, setTotalPage] = useState<number>(1);
-    const [genre, setGenre] = useState<string>("");
-    const [genres, setGenres] = useState<string[]>([]);
+  const [movieParams, setMovieParams] = React.useState<MovieParamsModel>({
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  });
 
-    const filters = [
-        {
-            name: "genre",
-            placeholder: "Genre",
-            options: genres,
-        },
-        {
-            name: "actor",
-            placeholder: "Actor",
-            options: ["Actor 1", "Actor 2", "Actor 3"],
-        },
-        {name: "year", placeholder: "Year", options: ["2021", "2020", "2019"]},
-        {
-            name: "award",
-            placeholder: "Award",
-            options: ["Oscar", "Golden Globe", "BAFTA"],
-        },
-        {
-            name: "director",
-            placeholder: "Director",
-            options: ["Director 1", "Director 2"],
-        },
-        {
-            name: "country",
-            placeholder: "Country",
-            options: ["USA", "UK", "France"],
-        },
-    ];
+  const [genres, setGenres] = React.useState<string[]>([]);
+  const [actors, setActors] = React.useState<string[]>([]);
+  // const [actors, setActors] = React.useState<string[]>(["Actor 1", "Actor2", "Actor3"]);
+  const [awards, setAwards] = React.useState<string[]>([]);
+  const [countries, setCountries] = React.useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = React.useState("");
 
-    useEffect(() => {
-        movieController
-            .getGenres()
-            .then((res) => {
-                const genreNames = res.data.map(
-                    (genre: { id: number; name: string }) => genre.name
-                );
+  const filters = [
+    {
+      name: "genre",
+      placeholder: "Genre",
+      options: genres,
+    },
+    {
+      name: "actor",
+      placeholder: "Actor",
+      options: actors,
+    },
+    {
+      name: "award",
+      placeholder: "Award",
+      options: awards,
+    },
+    {
+      name: "country",
+      placeholder: "Country",
+      options: countries,
+    },
+    {
+      name: "year",
+      placeholder: "Year",
+      options: getYearsFromXtoY(1950, new Date().getFullYear()),
+    },
+    {
+      name: "rating",
+      placeholder: "Rating",
+      options: ["1", "2", "3", "4", "5"],
+    },
+    {
+      name: "sortBy",
+      placeholder: "Sort By",
+      options: [
+        "title",
+        "genre",
+        "actor",
+        "award",
+        "country",
+        "year",
+        "rating",
+      ],
+    },
+    {
+      name: "pageSize",
+      placeholder: "Page Size",
+      options: PAGE_SIZE_DROPDOWN,
+    },
+    {
+      name: "sortOrder",
+      placeholder: "Sort Order",
+      options: SORT_ORDER_DROPDOWN,
+    },
+  ];
 
-                setGenres(genreNames); // Asumsikan res.data adalah array genre
-            })
-            .catch((err) => {
-                console.error("Error fetching genres:", err);
-            });
-    }, []);
+  const fetchMovies = async (movieParamsModel?: MovieParamsModel) => {
+    try {
+      const response = await movieController.getMovies(movieParamsModel);
+      const { data: movies, pagination } = response;
+      setMovies(movies);
+      setPagination(pagination!);
+    } catch (error) {
+      console.error("Error fetching movies:", error);
+    }
+  };
 
-    // fetch using controller
-    useEffect(() => {
-        movieController
-            .getMovies({
-                searchTerm: searchQuery,
-                page: page,
-                genre: genre,
-            })
-            .then((res) => {
-                console.log("film", res.data);
-                setMovies(res.data);
-                setTotalPage(res.pagination.totalPages);
-                setPage(res.pagination.page);
-            })
-            .catch((err) => {
-                console.log(err);
-            });
-    }, [genre, page, searchQuery]);
+  const getGenres = async () => {
+    try {
+      const response = await genreController.getGenres();
+      const data = response.data;
+      setGenres(
+        data.map((genre: GenreModel) => {
+          return genre.name;
+        })
+      );
+    } catch (error) {}
+  };
 
-    const handleFilterChange = (name: string, value: string) => {
-        console.info(name, value);
-        setSelectedFilters((prevFilters) => ({
-            ...prevFilters,
-            [name]: value,
-        }));
-        if (name === "genre") {
-            setGenre(value);
-        }
-    };
+  const getActors = async () => {
+    try {
+      const response = await actorController.getActors();
+      const data = response.data;
+      setActors(
+        data.map((actor: ActorModel) => {
+          return actor.name;
+        })
+      );
+    } catch (error) {
+      console.error("Error fetching directors:", error);
+    }
+  };
 
-    const handleApplyFilter = () => {
-        const queryString = Object.entries(selectedFilters)
-            .filter(([_, value]) => value !== "")
-            .map(([key, value]) => `${key}=${value}`)
-            .join("&");
+  const getAward = async () => {
+    try {
+      const response = await awardController.getAwards();
+      const data = response.data;
+      setAwards(
+        data.map((award: AwardModel) => {
+          return award.name;
+        })
+      );
+    } catch (error) {}
+  };
 
-        // Tambahkan search query jika ada
-        const searchParam = searchQuery ? `${searchQuery}` : "";
-        // setParamString(`${queryString}${searchParam}`);
-        setSearchQuery(searchQuery);
-        setGenre(selectedFilters["genre"]);
-        // Redirect ke URL dengan query parameter
-        navigate(`/movies?${queryString}${searchParam}`);
-    };
+  const getCountries = async () => {
+    try {
+      const response = await countryController.getCountries();
+      const data = response.data;
+      setCountries(
+        data.map((country: CountryModel) => {
+          return country.name;
+        })
+      );
+    } catch (error) {}
+  };
 
-    const handlePreviousPage = () => {
-        if (page > 1) setPage((prevPage) => prevPage - 1);
-    };
+  React.useEffect(() => {
+    getGenres();
+    getActors();
+    getAward();
+    getCountries();
+  }, []);
 
-    const handleNextPage = () => {
-        if (page < totalPage) setPage((prevPage) => prevPage + 1);
-    };
+  React.useEffect(() => {
+    fetchMovies(movieParams); // Pass current page to fetchMovies
+  }, [movieParams]);
 
-    return (
-        <>
-            <AppAppBar/>
-            <MainLayout giveSpace pt={14}>
-                {/* Toolbar Filtering */}
-                <Box sx={{mb: 4, display: "flex", flexDirection: "column"}}>
-                    {/* Filter Dropdowns */}
-                    <Grid
-                        container
-                        spacing={{xs: 1, sm: 1, md: 2, lg: 2, xl: 2}}
-                        sx={{flexGrow: 1, justifyContent: "left"}}
-                    >
-                        {filters.map((filter) => (
-                            <Grid
-                                key={filter.name}
-                                xs={6}
-                                sm={4}
-                                md={4}
-                                lg={2}
-                                xl={2}
-                                sx={{display: "flex", justifyContent: "center"}}
-                            >
-                                <Select
-                                    placeholder={filter.placeholder}
-                                    indicator={<KeyboardArrowDown/>}
-                                    sx={styleSelect}
-                                    onChange={(e, value) =>
-                                        handleFilterChange(filter.name, value as string)
-                                    }
-                                >
-                                    <Option value="">All {filter.placeholder}</Option>
-                                    {filter.options.map((option, idx) => (
-                                        <Option key={idx} value={option}>
-                                            {option}
-                                        </Option>
-                                    ))}
-                                </Select>
-                            </Grid>
-                        ))}
-                    </Grid>
+  const handlePageChange = async (newPage: number) => {
+    handleFilterChange("page", newPage);
+  };
 
-                    {/* Search & Apply */}
-                    <Grid
-                        container
-                        spacing={{xs: 1, sm: 1, md: 2, lg: 2, xl: 2}}
-                        sx={{flexGrow: 1, justifyContent: "left", m: 0}}
-                    >
-                        <Grid
-                            xs={12}
-                            sm={12}
-                            md={8}
-                            lg={10}
-                            xl={10}
-                            sx={{display: "flex", justifyContent: "center", pl: 0}}
-                        >
-                            {/* Search Bar */}
-                            <Input
-                                placeholder="Search by title"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                sx={{width: "100%", mt: 2}}
-                            />
-                        </Grid>
-                        <Grid
-                            xs={12}
-                            sm={12}
-                            md={4}
-                            lg={2}
-                            xl={2}
-                            sx={{display: "flex", justifyContent: "center", pr: 0}}
-                        >
-                            <Button onClick={handleApplyFilter} sx={{flexGrow: 1, mt: 2}}>
-                                Apply Filter & Search
-                            </Button>
-                        </Grid>
-                    </Grid>
-                </Box>
+  const handleFilterChange = (name: string, value: string | number) => {
+    setMovieParams((prevParams) => ({
+      ...prevParams,
+      [name]: value,
+    }));
+    console.info("Filter change: ", name, value);
+  };
 
-                {/* Movies */}
-                <Box>
-                    <Grid
-                        container
-                        spacing={{xs: 1, sm: 1, md: 2, lg: 2, xl: 2}}
-                        sx={{flexGrow: 1, justifyContent: "left"}}
-                    >
-                        {movies.map((movie: any, index: number) => (
-                            <Grid
-                                xs={6}
-                                sm={4}
-                                md={3}
-                                lg={2}
-                                xl={2}
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                <MovieCard
-                                    key={index}
-                                    id={movie.id}
-                                    title={movie.title}
-                                    posterUrl={movie.posterUrl}
-                                    rating={movie.rating}
-                                    year={movie.releaseDate}
-                                />
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Box>
+  const handleApplyFilter = () => {
+    fetchMovies(movieParams);
+  };
 
-                {/* Pagination */}
-                <Grid
-                    container
-                    sx={{
-                        flexGrow: 1,
-                        justifyContent: "center",
-                        gap: 1,
-                        mt: 2,
-                    }}
-                >
-                    <Button
-                        size="sm"
-                        variant="outlined"
-                        color="neutral"
-                        disabled={page === 1}
-                        onClick={handlePreviousPage}
-                        startDecorator={<KeyboardArrowLeft/>}
-                        sx={{display: {xs: "none", md: "flex"}}}
-                    >
-                        Previous
-                    </Button>
+  return (
+    <>
+      <AppAppBar />
+      <MainLayout giveSpace pt={14}>
+        {/* Toolbar Filtering */}
+        <Box sx={{ mb: 4, display: "flex", flexDirection: "column" }}>
+          {/* Filter Dropdowns */}
+          <Grid
+            container
+            spacing={{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2 }}
+            sx={{ flexGrow: 1, justifyContent: "left" }}
+          >
+            {filters.map((filter) => (
+              <Grid
+                key={filter.name}
+                xs={6}
+                sm={4}
+                md={4}
+                lg={2}
+                xl={2}
+                sx={{ display: "flex", justifyContent: "center" }}
+              >
+                <Autocomplete
+                  placeholder={"All " + filter.name}
+                  sx={styleSelect}
+                  options={filter.options.map((opt) => opt)}
+                  onChange={(e, value) => {
+                    handleFilterChange(filter.name, value ? value : "");
+                    console.info(filter.name, value);
+                  }}
+                />
+              </Grid>
+            ))}
+          </Grid>
 
-                    <Box
-                        sx={{
-                            flex: {
-                                sx: 0,
-                                md: 1,
-                            },
-                        }}
-                    />
-                    {[...Array(totalPage)].map((_, index) => (
-                        <IconButton
-                            key={index}
-                            size="sm"
-                            variant={page === index + 1 ? "solid" : "outlined"}
-                            color="neutral"
-                            onClick={() => setPage(index + 1)}
-                        >
-                            {index + 1}
-                        </IconButton>
-                    ))}
-                    <Button
-                        size="sm"
-                        variant="outlined"
-                        color="neutral"
-                        disabled={page === 1}
-                        onClick={handlePreviousPage}
-                        startDecorator={<KeyboardArrowLeft/>}
-                        sx={{display: {xs: "flex", md: "none"}}}
-                    >
-                        Previous
-                    </Button>
-                    <Box sx={{flex: 1}}/>
-                    <Button
-                        size="sm"
-                        variant="outlined"
-                        color="neutral"
-                        endDecorator={<KeyboardArrowRight/>}
-                    >
-                        Next
-                    </Button>
-                </Grid>
+          {/* Search & Apply */}
+          <Grid
+            container
+            spacing={{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2 }}
+            sx={{ flexGrow: 1, justifyContent: "left", m: 0 }}
+          >
+            <Grid
+              xs={12}
+              sm={12}
+              md={8}
+              lg={10}
+              xl={10}
+              sx={{ display: "flex", justifyContent: "center", pl: 0 }}
+            >
+              {/* Search Bar */}
+              <Input
+                placeholder={"Search movies..."}
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  handleFilterChange("searchTerm", e.target.value);
+                }}
+                sx={{ width: "100%", mt: 2 }}
+              />
+            </Grid>
+            <Grid
+              xs={12}
+              sm={12}
+              md={4}
+              lg={2}
+              xl={2}
+              sx={{ display: "flex", justifyContent: "center", pr: 0 }}
+            >
+              <Button onClick={handleApplyFilter} sx={{ flexGrow: 1, mt: 2 }}>
+                Apply Filter & Search
+              </Button>
+            </Grid>
+          </Grid>
+        </Box>
 
-                {/* Pagination */}
-                <Box
-                    className="Pagination-laptopUp"
-                    sx={{
-                        pt: 2,
-                        gap: 1,
-                        [`& .${iconButtonClasses.root}`]: {borderRadius: "50%"},
-                        display: {
-                            xs: "none",
-                            md: "none",
-                        },
-                    }}
-                >
-                    <Button
-                        size="sm"
-                        variant="outlined"
-                        color="neutral"
-                        startDecorator={<KeyboardArrowLeft/>}
-                    >
-                        Previous
-                    </Button>
+        {/* Movies */}
+        <Box>
+          <Grid
+            container
+            spacing={{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2 }}
+            sx={{ flexGrow: 1, justifyContent: "left" }}
+          >
+            {movies.map((movie: any, index: number) => (
+              <Grid
+                xs={6}
+                sm={4}
+                md={3}
+                lg={2}
+                xl={2}
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                <MovieCard
+                  key={index}
+                  id={movie.id}
+                  title={movie.title}
+                  posterUrl={movie.posterUrl}
+                  rating={movie.rating}
+                  year={movie.releaseDate}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
 
-                    <Box sx={{flex: 1}}/>
-                    {["1", "2", "3", "…", "8", "9", "10"].map((page) => (
-                        <IconButton
-                            key={page}
-                            size="sm"
-                            variant={Number(page) ? "outlined" : "plain"}
-                            color="neutral"
-                        >
-                            {page}
-                        </IconButton>
-                    ))}
-                    <Box sx={{flex: 1}}/>
-                    <Button
-                        size="sm"
-                        variant="outlined"
-                        color="neutral"
-                        disabled={page === totalPage}
-                        onClick={handleNextPage}
-                        endDecorator={<KeyboardArrowRight/>}
-                    >
-                        Next
-                    </Button>
-                </Box>
-            </MainLayout>
-        </>
-    );
+        <PaginationComponent
+          page={pagination.page}
+          pageSize={pagination.pageSize}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          handlePageChange={handlePageChange}
+          handleNextPage={() => handlePageChange((pagination.page || 1) + 1)}
+          handlePrevPage={() => handlePageChange(pagination.page - 1)}
+        />
+      </MainLayout>
+    </>
+  );
 }

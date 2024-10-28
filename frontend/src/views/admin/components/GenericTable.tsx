@@ -19,15 +19,31 @@ import {
   Divider,
   DialogContent,
   DialogActions,
+  Grid,
+  Accordion,
+  AccordionGroup,
+  AccordionSummary,
+  AccordionDetails,
 } from "@mui/joy";
 
 import PaginationComponent from "./PaginationComponent";
 import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
 import DeleteForeverRoundedIcon from "@mui/icons-material/DeleteForeverRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import FilterAltRoundedIcon from "@mui/icons-material/FilterAltRounded";
+
+const styleSelect = {
+  width: "100%",
+  [`& .MuiSelect-indicator`]: {
+    transition: "0.2s",
+    [`&.Mui-expanded`]: {
+      transform: "rotate(-180deg)",
+    },
+  },
+};
 
 // Define types for different column types
-interface Column<T> {
+export interface Column<T> {
   label: string;
   key: keyof T;
   type:
@@ -49,14 +65,22 @@ interface GenericTableProps<T> {
   columns: Column<T>[];
   renderRowActions?: (item: T) => React.ReactNode; // Optionally allow custom row actions
   options?: { [key: string]: string[] }; // Optional options for fields like genres
+
   onEdit: (updatedItem: T) => Promise<void>; // Function to handle edit submission
-  onDelete: (item: T) => void; // Function to handle delete
-  onAdd?: (newItem: T) => void; // Function to handle add
+  onDelete: (item: T) => Promise<void>; // Function to handle delete
+  onAdd?: (newItem: T) => Promise<void>; // Function to handle add
   onPageChange: (page: number) => void; // Function to handle pagination
   page: number; // Current page
   pageSize: number; // Items per page
   totalItems: number; // Total items
   totalPages: number; // Total page
+
+  filters?: { [key: string]: string[] | number[] | boolean[] }; // Optional options for fields like genres
+  onFilterChange?: (key: string, value: string) => void; // Optional filter change handler
+  applySearch?: boolean;
+  placeholderSearch?: string;
+  realtimeSearch?: boolean; // Optional realtime search
+  onSearchApply?: (value: string) => void;
 }
 export default function GenericTable<T>({
   title,
@@ -64,6 +88,12 @@ export default function GenericTable<T>({
   columns,
   renderRowActions,
   options = {},
+  filters = {},
+  applySearch = false,
+  placeholderSearch = "Search",
+  realtimeSearch = false,
+  onFilterChange = () => {},
+  onSearchApply = () => {},
   onEdit,
   onAdd,
   onDelete,
@@ -76,6 +106,7 @@ export default function GenericTable<T>({
   const [selected, setSelected] = React.useState<readonly (keyof T)[]>([]);
   const [selectedItem, setSelectedItem] = React.useState<T | null>(null);
   const [newItem, setNewItem] = React.useState<T | null>(null);
+  const [searchQuery, setSearchQuery] = React.useState("");
 
   // Modal state
   const [openAddModal, setOpenAddModal] = React.useState(false);
@@ -259,11 +290,11 @@ export default function GenericTable<T>({
     switch (col.type) {
       case "string":
         return (
-          <Input
-            readOnly={col.readonly}
-            name={String(col.key)} // Menggunakan name untuk FormData
-            defaultValue={value as string}
-          />
+            <Input
+              readOnly={col.readonly}
+              name={String(col.key)} // Menggunakan name untuk FormData
+              defaultValue={value as string}
+            />
         );
       case "number":
         return (
@@ -385,6 +416,124 @@ export default function GenericTable<T>({
         </Box>
       </Box>
 
+      <AccordionGroup
+        size={"sm"}
+        transition={{
+          initial: "0.3s ease-out",
+          expanded: "0.2s ease",
+        }}
+        sx={{
+          flexGrow: "0 !important",
+        }}
+      >
+        <Accordion>
+          <AccordionSummary indicator={<FilterAltRoundedIcon />}>
+            <Typography level="title-md">Filter and Search</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            {/* Filter Custom Components */}
+            <Box sx={{ mb: 1, display: "flex", flexDirection: "column" }}>
+              {/* Filter Dropdowns */}
+              <Grid
+                container
+                spacing={{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2 }}
+                sx={{ flexGrow: "initial", justifyContent: "left" }}
+              >
+                {filters &&
+                  Object.keys(filters).map((key) => (
+                    <Grid
+                      key={key}
+                      xs={6}
+                      sm={4}
+                      md={4}
+                      lg={2}
+                      xl={2}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        flexDirection: "column",
+                      }}
+                    >
+                      {/* label bold*/}
+                      <Typography level="title-sm">
+                        {key.charAt(0).toUpperCase() + key.slice(1)}
+                      </Typography>
+                      {/* select */}
+                      <Autocomplete
+                        placeholder={"All " + key}
+                        sx={styleSelect}
+                        options={filters[key].map((filter) => filter)}
+                        onChange={(e, value) => {
+                          onFilterChange(key, value as string);
+                          console.info(key, value);
+                        }}
+                      />
+                    </Grid>
+                  ))}
+              </Grid>
+
+              {/* Search & Apply */}
+              {applySearch && (
+                <Grid
+                  container
+                  spacing={{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2 }}
+                  sx={{ flexGrow: 1, justifyContent: "left", m: 0 }}
+                >
+                  <Grid
+                    xs={12}
+                    sm={12}
+                    md={8}
+                    lg={10}
+                    xl={10}
+                    sx={{ display: "flex", justifyContent: "center", px: 0 }}
+                  >
+                    {/* Search Bar */}
+                    <Input
+                      placeholder={placeholderSearch}
+                      value={searchQuery}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setSearchQuery(value);
+                        if (realtimeSearch) {
+                          onSearchApply(value);
+                        }
+                      }}
+                      sx={{ width: "100%", mt: 2 }}
+                    />
+                  </Grid>
+                  <Grid
+                    xs={12}
+                    sm={12}
+                    md={4}
+                    lg={2}
+                    xl={2}
+                    sx={{ display: "flex", justifyContent: "center", pr: 0 }}
+                  >
+                    <Button
+                      onClick={() => {
+                        onSearchApply(searchQuery as string);
+                      }}
+                      sx={{ flexGrow: 1, mt: 2 }}
+                    >
+                      Apply Search
+                    </Button>
+                  </Grid>
+                </Grid>
+              )}
+            </Box>
+          </AccordionDetails>
+        </Accordion>
+      </AccordionGroup>
+
+      {/* n item selected */}
+      <Box ml={1}>
+        <Typography level="body-md">
+          {selected.length > 0
+            ? `${selected.length} item selected`
+            : ""}
+        </Typography>
+      </Box>
+      {/* Tabel */}
       <Sheet
         variant="outlined"
         sx={{
@@ -511,6 +660,14 @@ export default function GenericTable<T>({
                 </td>
               </tr>
             ))}
+            {data.length === 0 && (
+              /* Placeholder for empty data */
+              <Box>
+                <Typography level="body-md">
+                  No data available yet 😢
+                </Typography>
+              </Box>
+            )}
           </tbody>
         </Table>
       </Sheet>
@@ -642,7 +799,7 @@ export default function GenericTable<T>({
           </DialogTitle>
           <Divider />
           <DialogContent>
-            {`Are you sure you want to discard the items?`}
+            {`Are you sure you want to discard the ${selected.length} items?`}
           </DialogContent>
 
           <DialogActions>

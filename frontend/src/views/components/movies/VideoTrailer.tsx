@@ -3,7 +3,7 @@ import { extractYouTubeVideoId } from "../../../helpers/extractYouTubeVideoId";
 import { SxProps } from "@mui/joy/styles/types";
 
 interface VideoTrailerProps {
-  videoUrl: string;
+  videoUrl?: string;
   sx?: SxProps;
   autoPlay?: boolean;
 }
@@ -42,17 +42,19 @@ export default function VideoTrailer({
     >
       <Skeleton loading={!videoUrl}>
         <CardCover>
-          <iframe
-            src={`https://www.youtube.com/embed/${extractYouTubeVideoId(
-              videoUrl
-            )}?autoplay=${autoplayParam}&mute=0&controls=1`} // Sesuaikan autoplay sesuai dengan prop autoPlay
-            title="YouTube video player"
-            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-            allowFullScreen
-            style={{
-              border: "none",
-            }}
-          />
+          <Skeleton loading={!videoUrl}>
+            <iframe
+              src={`https://www.youtube.com/embed/${extractYouTubeVideoId(
+                videoUrl ? videoUrl : ""
+              )}?autoplay=${autoplayParam}&mute=0&controls=1`} // Sesuaikan autoplay sesuai dengan prop autoPlay
+              title="YouTube video player"
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+              allowFullScreen
+              style={{
+                border: "none",
+              }}
+            />
+          </Skeleton>
         </CardCover>
       </Skeleton>
     </Card>

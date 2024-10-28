@@ -12,18 +12,16 @@ import Header from "../components/Header";
 import BreadcrumbsHome from "../components/BreadcrumbsHome";
 import BreadcrumbsDashboard from "../components/BreadcrumbsDashboard";
 import { AdminTableLayout } from "../layouts/AdminTableLayout";
-import GenericTable from "../components/GenericTable";
+import GenericTable, { Column } from "../components/GenericTable";
 import actorController from "../../../controllers/ActorController";
-import { ActorModel } from "../../../models/ActorModel";
+import {
+  ActorModel,
+  ActorModelTable,
+  ActorParamsModel,
+} from "../../../models/ActorModel";
 import countryController from "../../../controllers/CountryController";
-
-interface ActorModelTable {
-  id: number;
-  name: string;
-  birthDate: string;
-  photoUrl: string;
-  country: string;
-}
+import { PaginationModel } from "../../../models/PaginationModel";
+import { PAGE_SIZE_DROPDOWN, SORT_ORDER_DROPDOWN } from "../../../configs/constants";
 
 function convertActorModelToTable(actor: ActorModel): ActorModelTable {
   return {
@@ -35,24 +33,42 @@ function convertActorModelToTable(actor: ActorModel): ActorModelTable {
   };
 }
 
+const columns: Column<ActorModelTable>[] = [
+  {
+    key: "id",
+    label: "ID",
+    type: "number",
+    readonly: true,
+    width: 70,
+  },
+  { key: "name", label: "Name", type: "string" },
+  { key: "birthDate", label: "Birth Date", type: "date" },
+  { key: "photoUrl", label: "Photo Url", type: "string" },
+  { key: "country", label: "Country", type: "string_autocomplete" },
+]
+
 export default function AdminActorPage() {
   const [actors, setActors] = React.useState<ActorModelTable[]>([]);
-  const [countries, setCountries] = React.useState<string[]>([]);
-  const [page, setPage] = React.useState(1);
-  const [totalItems, setTotalItems] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(24);
-  const [totalPages, setTotalPages] = React.useState(1);
+  const [pagination, setPagination] = React.useState<PaginationModel>({
+    page: 1,
+    pageSize: 24,
+    totalItems: 0,
+    totalPages: 1,
+  });
+  const [actorParams, setActorParams] = React.useState<ActorParamsModel>({
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  });
 
-  const fetchActors = async (page: number) => {
+  const [countries, setCountries] = React.useState<string[]>([]);
+
+  const fetchActors = async (actorParamsModel?: ActorParamsModel) => {
     try {
-      const response = await actorController.getActors(page);
+      const response = await actorController.getActors(actorParamsModel);
       const { data: actors, pagination } = response;
 
       setActors(actors.map(convertActorModelToTable));
-      setTotalItems(pagination!.totalItems);
-      setPageSize(pagination!.pageSize);
-      setTotalPages(pagination!.totalPages);
-      setPage(pagination!.page); // Set current page explicitly
+      setPagination(pagination!);
     } catch (error) {
       console.error("Error fetching actors:", error);
     }
@@ -60,10 +76,7 @@ export default function AdminActorPage() {
 
   const fetchCountries = async () => {
     try {
-      const response = await countryController.getCountries(
-        undefined,
-        undefined
-      );
+      const response = await countryController.getCountries();
       const data = response.data;
       setCountries(data.map((country) => country.name));
     } catch (error) {
@@ -73,12 +86,11 @@ export default function AdminActorPage() {
 
   React.useEffect(() => {
     fetchCountries(); // Pass current page to fetchActors
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   React.useEffect(() => {
-    fetchActors(page); // Pass current page to fetchActors
-  }, [page]);
+    fetchActors(actorParams); // Pass current actorParamsModel to fetchActors
+  }, [actorParams]);
 
   const handleEditActor = async (updatedActor: ActorModelTable) => {
     try {
@@ -95,7 +107,10 @@ export default function AdminActorPage() {
     try {
       const response = await actorController.deleteActor(actor.id);
       setActors((prevActors) => prevActors.filter((m) => m.id !== actor.id));
-      setTotalItems((prevTotal) => prevTotal - 1); // Mengurangi total items
+      setPagination((prevPagination) => ({
+        ...prevPagination,
+        totalItems: prevPagination.totalItems - 1,
+      }));
       console.log("Actor deleted successfully:", response.message);
       console.info("delete actor with id: ", actor.id);
     } catch (error) {
@@ -104,7 +119,15 @@ export default function AdminActorPage() {
   };
 
   const handlePageChange = async (newPage: number) => {
-    setPage(newPage);
+    handleFilterChange("page", newPage);
+  };
+
+  const handleFilterChange = (name: string, value: string | number) => {
+    setActorParams((prevParams) => ({
+      ...prevParams,
+      [name]: value,
+    }));
+    console.info("Filter change: ", name, value);
   };
 
   return (
@@ -135,29 +158,32 @@ export default function AdminActorPage() {
           <GenericTable<ActorModelTable>
             title="Actors"
             data={actors}
-            columns={[
-              {
-                key: "id",
-                label: "ID",
-                type: "number",
-                readonly: true,
-                width: 70,
-              },
-              { key: "name", label: "Name", type: "string" },
-              { key: "birthDate", label: "Birth Date", type: "date" },
-              { key: "photoUrl", label: "Photo Url", type: "string" },
-              { key: "country", label: "Country", type: "string_autocomplete" },
-            ]}
+            columns={columns}
             options={{
               country: countries,
             }}
             onEdit={handleEditActor}
             onDelete={handleDeleteActor}
             onPageChange={handlePageChange}
-            page={page}
-            pageSize={pageSize}
-            totalItems={totalItems}
-            totalPages={totalPages}
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            totalItems={pagination.totalItems}
+            totalPages={pagination.totalPages}
+
+            // filter and search
+            filters={{
+              country: countries,
+              sortBy: columns.map((column) => column.key),
+              sortOrder: SORT_ORDER_DROPDOWN,
+              pageSize: PAGE_SIZE_DROPDOWN,
+            }}
+            onFilterChange={handleFilterChange}
+            applySearch
+            realtimeSearch
+            placeholderSearch="Search actor..."
+            onSearchApply={(searchTerm) =>
+              handleFilterChange("searchTerm", searchTerm)
+            }
           />
 
           {/* <OrderList /> */}

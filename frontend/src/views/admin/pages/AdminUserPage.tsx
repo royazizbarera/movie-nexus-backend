@@ -14,8 +14,17 @@ import BreadcrumbsDashboard from "../components/BreadcrumbsDashboard";
 import { AdminTableLayout } from "../layouts/AdminTableLayout";
 import GenericTable from "../components/GenericTable";
 import userController from "../../../controllers/UserController";
-import { UserModel, UserModelTable } from "../../../models/UserModel";
+import {
+  UserModel,
+  UserModelTable,
+  UserParamsModel,
+} from "../../../models/UserModel";
 import countryController from "../../../controllers/CountryController";
+import { PaginationModel } from "../../../models/PaginationModel";
+import {
+  PAGE_SIZE_DROPDOWN,
+  SORT_ORDER_DROPDOWN,
+} from "../../../configs/constants";
 
 function convertUserModelToTable(user: UserModel): UserModelTable {
   return {
@@ -32,25 +41,60 @@ function convertUserModelToTable(user: UserModel): UserModelTable {
     verificationRequestDate: user.verificationRequestDate,
   };
 }
+const columns: any[] = [
+  {
+    key: "id",
+    label: "ID",
+    type: "number",
+    readonly: true,
+    width: 70,
+  },
+  { key: "username", label: "Username", type: "string" },
+  { key: "email", label: "Email", type: "string" },
+  { key: "password", label: "Password", type: "string" },
+  { key: "photoProfile", label: "Photo Profile", type: "string" },
+  { key: "provider", label: "Provider", type: "string" },
+  { key: "role", label: "Role", type: "string" },
+  { key: "isVerified", label: "Is Verified", type: "boolean" },
+  {
+    key: "verificationCode",
+    label: "Verification Code",
+    type: "string",
+  },
+  {
+    key: "verificationCodeExpired",
+    label: "Verification Code Expired",
+    type: "string",
+  },
+  {
+    key: "verificationRequestDate",
+    label: "Verification Request Date",
+    type: "string",
+  },
+];
 
 export default function AdminUserPage() {
   const [users, setUsers] = React.useState<UserModelTable[]>([]);
   const [countries, setCountries] = React.useState<string[]>([]);
-  const [page, setPage] = React.useState(1);
-  const [totalItems, setTotalItems] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(24);
-  const [totalPages, setTotalPages] = React.useState(1);
 
-  const fetchUsers = async (page: number) => {
+  const [pagination, setPagination] = React.useState<PaginationModel>({
+    page: 1,
+    pageSize: 24,
+    totalItems: 0,
+    totalPages: 1,
+  });
+  const [userParams, setUserParams] = React.useState<UserParamsModel>({
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  });
+
+  const fetchUsers = async (userParamsModel: UserParamsModel) => {
     try {
-      const response = await userController.getUsers(page);
+      const response = await userController.getUsers(userParamsModel);
       const { data: users, pagination } = response;
 
       setUsers(users.map(convertUserModelToTable));
-      setTotalItems(pagination!.totalItems);
-      setPageSize(pagination!.pageSize);
-      setTotalPages(pagination!.totalPages);
-      setPage(pagination!.page); // Set current page explicitly
+      setPagination(pagination!); // Set current page explicitly
     } catch (error) {
       console.error("Error fetching users:", error);
     }
@@ -58,10 +102,7 @@ export default function AdminUserPage() {
 
   const fetchCountries = async () => {
     try {
-      const response = await countryController.getCountries(
-        undefined,
-        undefined
-      );
+      const response = await countryController.getCountries();
       const data = response.data;
       setCountries(data.map((country) => country.name));
     } catch (error) {
@@ -75,8 +116,8 @@ export default function AdminUserPage() {
   }, []);
 
   React.useEffect(() => {
-    fetchUsers(page); // Pass current page to fetchUsers
-  }, [page]);
+    fetchUsers(userParams); // Pass current userParams to fetchUsers
+  }, [userParams]);
 
   const handleEditUser = async (updatedUser: UserModelTable) => {
     try {
@@ -93,7 +134,10 @@ export default function AdminUserPage() {
     try {
       const response = await userController.deleteUser(user.id);
       setUsers((prevUsers) => prevUsers.filter((m) => m.id !== user.id));
-      setTotalItems((prevTotal) => prevTotal - 1); // Mengurangi total items
+      setPagination((prevPagination) => ({
+        ...prevPagination,
+        totalItems: prevPagination.totalItems - 1,
+      }));
       console.log("User deleted successfully:", response.message);
       console.info("delete user with id: ", user.id);
     } catch (error) {
@@ -102,7 +146,14 @@ export default function AdminUserPage() {
   };
 
   const handlePageChange = async (newPage: number) => {
-    setPage(newPage);
+    handleFilterChange("page", newPage);
+  };
+
+  const handleFilterChange = (name: string, value: string | number) => {
+    setUserParams((prevParams) => ({
+      ...prevParams,
+      [name]: value,
+    }));
   };
 
   return (
@@ -133,47 +184,34 @@ export default function AdminUserPage() {
           <GenericTable<UserModelTable>
             title="Users"
             data={users}
-            columns={[
-              {
-                key: "id",
-                label: "ID",
-                type: "number",
-                readonly: true,
-                width: 70,
-              },
-              { key: "username", label: "Username", type: "string" },
-              { key: "email", label: "Email", type: "string" },
-              { key: "password", label: "Password", type: "string" },
-              { key: "photoProfile", label: "Photo Profile", type: "string" },
-              { key: "provider", label: "Provider", type: "string" },
-              { key: "role", label: "Role", type: "string" },
-              { key: "isVerified", label: "Is Verified", type: "boolean" },
-              {
-                key: "verificationCode",
-                label: "Verification Code",
-                type: "string",
-              },
-              {
-                key: "verificationCodeExpired",
-                label: "Verification Code Expired",
-                type: "string",
-              },
-              {
-                key: "verificationRequestDate",
-                label: "Verification Request Date",
-                type: "string",
-              },
-            ]}
+            columns={columns}
             options={{
               country: countries,
             }}
             onEdit={handleEditUser}
             onDelete={handleDeleteUser}
             onPageChange={handlePageChange}
-            page={page}
-            pageSize={pageSize}
-            totalItems={totalItems}
-            totalPages={totalPages}
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            totalItems={pagination.totalItems}
+            totalPages={pagination.totalPages}
+            // filters
+            filters={{
+              role: ["admin", "writer"],
+              provider: ["email", "google"],
+              isVerified: [true, false],
+              country: countries,
+              sortBy: columns.map((column) => column.key),
+              sortOrder: SORT_ORDER_DROPDOWN,
+              pageSize: PAGE_SIZE_DROPDOWN,
+            }}
+            onFilterChange={handleFilterChange}
+            applySearch
+            realtimeSearch
+            placeholderSearch="Search user..."
+            onSearchApply={(searchTerm) =>
+              handleFilterChange("searchTerm", searchTerm)
+            }
           />
 
           {/* <OrderList /> */}

@@ -173,6 +173,8 @@ const buttonMenuStyle = {
 };
 
 export default function AppAppBar() {
+  const [hidden, setHidden] = React.useState(false);
+  const lastScrollY = React.useRef(0);
   const [openSidebar, setOpenSidebar] = React.useState<boolean>(false);
   const [openSignIn, setOpenSignIn] = React.useState<boolean>(false);
   const [openSignUp, setOpenSignUp] = React.useState<boolean>(false);
@@ -189,11 +191,23 @@ export default function AppAppBar() {
     navigate("/user-profile");
   };
 
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      setHidden(scrollY > lastScrollY.current);
+      lastScrollY.current = scrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <Box
       component="header"
       position="fixed"
       sx={{
+        display: hidden ? "none" : "block",
         mt: 4,
         width: "100%",
         zIndex: 1100,

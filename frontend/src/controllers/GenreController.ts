@@ -1,5 +1,5 @@
 import { BaseController } from './BaseController';
-import { GenreModel } from '../models/GenreModel';
+import { GenreModel, GenreParamsModel } from '../models/GenreModel';
 import { useAuthStore } from '../contexts/authStore'; // Asumsikan ini store untuk mendapatkan data user
 import { BASE_API_URL } from '../configs/constants';
 
@@ -9,8 +9,8 @@ class GenreController extends BaseController {
   }
 
   // Mendapatkan daftar film dengan pagination
-  public async getGenres(page: number = 1, searchTerm?: string, genre?: string) {
-    const params = { page, searchTerm, genre };
+  public async getGenres(genreParamsModel?: GenreParamsModel | undefined) {
+    const params = { ...genreParamsModel };
     return this.get<GenreModel[]>('/', params);
   }
 
