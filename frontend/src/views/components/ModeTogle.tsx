@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useColorScheme } from "@mui/joy/styles";
-import { Button, IconButton } from "@mui/joy";
+import { IconButton } from "@mui/joy";
 
 import WbSunnyRoundedIcon from "@mui/icons-material/WbSunnyRounded";
 import ModeNightRoundedIcon from "@mui/icons-material/ModeNightRounded";

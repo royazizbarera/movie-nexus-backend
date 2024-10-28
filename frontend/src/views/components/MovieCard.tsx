@@ -109,7 +109,7 @@ export default function MovieCard({
               <Skeleton loading={!title}>{title || "Title movie"}</Skeleton>
             </Typography>
             <Typography level="body-xs">
-              <Skeleton loading={!year}>{year || 2024}</Skeleton>
+              <Skeleton loading={!year}>{new Date(year!).getFullYear() || 2024}</Skeleton>
             </Typography>
           </CardContent>
         </CardOverflow>

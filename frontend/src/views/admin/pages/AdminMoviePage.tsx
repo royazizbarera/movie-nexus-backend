@@ -14,7 +14,6 @@ import BreadcrumbsDashboard from "../components/BreadcrumbsDashboard";
 import { AdminTableLayout } from "../layouts/AdminTableLayout";
 import GenericTable, { Column } from "../components/GenericTable";
 import { MovieParamsModel, MovieModel } from "../../../models/MovieModel";
-import movieController from "../../../controllers/MovieControllerDua";
 import genreController from "../../../controllers/GenreController";
 import { GenreModel } from "../../../models/GenreModel";
 import { PaginationModel } from "../../../models/PaginationModel";
@@ -29,6 +28,7 @@ import {
   PAGE_SIZE_DROPDOWN,
   SORT_ORDER_DROPDOWN,
 } from "../../../configs/constants";
+import movieController from "../../../controllers/MovieController";
 
 interface MovieModelTable {
   id: number;
@@ -178,6 +178,8 @@ export default function AdminMoviePage() {
       );
     } catch (error) {}
   };
+
+
 
   React.useEffect(() => {
     getGenres();

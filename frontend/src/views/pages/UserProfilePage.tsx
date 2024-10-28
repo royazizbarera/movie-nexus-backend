@@ -3,7 +3,7 @@ import MovieCard from "../components/MovieCard";
 import AppAppBar from "../components/AppAppBar";
 import UserCard from "../components/users/UserCard";
 import MainLayout from "../layouts/MainLayout";
-import movieController from "../../controllers/movieController";
+import movieController from "../../controllers/MovieController";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../../contexts/authStore";
 

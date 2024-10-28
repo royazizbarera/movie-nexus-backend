@@ -1,72 +1,40 @@
-import axios from "axios";
-
+import { BaseController } from "./BaseController";
+import { MovieParamsModel, MovieModel } from "../models/MovieModel";
+import { useAuthStore } from "../contexts/authStore"; // Asumsikan ini store untuk mendapatkan data user
 import { BASE_API_URL } from "../configs/constants";
-import { useAuthStore } from "../contexts/authStore";
 
-axios.defaults.withCredentials = true;
+class MovieController extends BaseController {
+  constructor() {
+    super(`${BASE_API_URL}/movies`); // Sesuaikan base URL API untuk movies
+  }
 
-class MovieController {
+  // Mendapatkan daftar film dengan pagination
+  public async getMovies(movieFilterParamsModel?: MovieParamsModel | undefined) {
+    const params = { ...movieFilterParamsModel };
+    return this.get<MovieModel[]>("/", params);
+  }
 
+  // Mendapatkan detail film berdasarkan ID
+  public async getMovieById(id: number) {
+    return this.get<MovieModel>(`/${id}`);
+  }
 
-  private isAdmin() {
+  // Menambah film baru
+  public async addMovie(movie: MovieModel) {
+    return this.post<MovieModel>("/", movie);
+  }
+
+  // Mengubah data film, hanya untuk admin
+  public async updateMovie(id: number, movie: MovieModel) {
     const { user } = useAuthStore.getState();
-    return user?.role === "admin";
+    return this.put<MovieModel>(`/${id}`, movie, user!.role!.toString());
   }
 
-
-  public async getMovies({
-    searchTerm,
-    page,
-    genre,
-  }: {
-    searchTerm?: string;
-    page?: number;
-    genre?: string;
-  }) {
-    try {
-      // Buat object params hanya dengan nilai-nilai yang ada
-      const params = {
-        ...(searchTerm && { searchTerm }), // Hanya tambahkan jika ada searchTerm
-        ...(page && { page }), // Hanya tambahkan jika ada page
-        ...(genre && { genre }), // Hanya tambahkan jika ada genre
-      };
-
-      const response = await axios.get(`${BASE_API_URL}/movies`, { params });
-
-      console.log(response.data);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching movies:", error);
-      throw error; // Opsional, jika ingin meneruskan error ke luar fungsi
-    }
+  // Menghapus film berdasarkan ID, hanya untuk admin
+  public async deleteMovie(id: number) {
+    const { user } = useAuthStore.getState();
+    return this.delete<void>(`/${id}`, user!.role!.toString());
   }
-
-  getMovieById = async (id: string) => {
-    try {
-      const response = await axios.get(`${BASE_API_URL}/movies/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error(error);
-    }
-  };
-  // get genres
-  getGenres = async () => {
-    try {
-      const response = await axios.get(`${BASE_API_URL}/genres`);
-      return response.data;
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  getActors = async () => {
-    try {
-      const response = await axios.get(`${BASE_API_URL}/actors`);
-      return response.data;
-    } catch (error) {
-      console.error(error);
-    }
-  };
 }
 
 const movieController = new MovieController();

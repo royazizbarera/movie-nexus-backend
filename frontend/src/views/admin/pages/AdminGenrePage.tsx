@@ -52,6 +52,13 @@ export default function AdminGenrePage() {
     page: pagination.page,
     pageSize: pagination.pageSize,
   });
+  
+  React.useEffect(() => {
+    fetchGenres(genreParams); // Pass current page to fetchGenres
+  }, [genreParams]);
+  
+  
+  // TODO: Genre CRUD operations
   const fetchGenres = async (genreParamsModel: GenreParamsModel) => {
     try {
       const response = await genreController.getGenres(genreParamsModel);
@@ -63,16 +70,14 @@ export default function AdminGenrePage() {
       console.error("Error fetching genres:", error);
     }
   };
-
-  React.useEffect(() => {
-    fetchGenres(genreParams); // Pass current page to fetchGenres
-  }, [genreParams]);
-
   const handleEditGenre = async (updatedGenre: GenreModelTable) => {
     try {
       // Kirim data yang telah diubah ke endpoint tertentu
       // const response = await axios.put(`http://localhost:3001/genre/${updatedGenre.id}`, updatedGenre);
-      // console.log('Genre updated successfully:', response.data);
+        // console.log('Genre updated successfully:', response.data);
+      const response = await genreController.updateGenre(updatedGenre.id, updatedGenre);
+      fetchGenres(genreParams);
+      console.log("Genre updated successfully:", response.message);
       console.info("update genre: ", updatedGenre);
     } catch (error) {
       console.error("Error updating genre:", error);

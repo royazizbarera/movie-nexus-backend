@@ -2,7 +2,7 @@ import { Box, Grid, Typography } from "@mui/joy";
 import MovieCard from "../components/MovieCard";
 import MainLayout from "../layouts/MainLayout";
 import { useEffect, useRef, useState } from "react";
-import movieController from "../../controllers/movieController";
+import movieController from "../../controllers/MovieController";
 import AppAppBar from "../components/AppAppBar";
 import BackgroundTrailer from "../components/movies/BackgroundTrailer";
 import ContentLayout from "../layouts/ContentLayout";
@@ -26,7 +26,7 @@ export default function Home() {
     try {
       movieController
         .getMovies({ page: page })
-        .then((res) => {
+        .then((res: any) => {
           setMovies((prevMovies) => [...prevMovies, ...res.data]); // Tambah data baru
           setPage((prevPage) => prevPage + 1); // Naikkan halaman setelah fetch
           if (page === res.pagination.totalPages) {

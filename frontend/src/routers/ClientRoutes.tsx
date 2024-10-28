@@ -7,14 +7,12 @@ import SignInPage from "../views/pages/SignInPage";
 import SignUpPage from "../views/pages/SignUpPage";
 import ProtectedRoute from "./ProtectedRoutes";
 import VerifyEmailPage from "../views/pages/VerifyEmailPage";
-import MoviesPageDua from "../views/pages/MoviesPageDua";
 
 export default function ClientRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/movies" element={<MoviesPage />} />
-      <Route path="/movies-dua" element={<MoviesPageDua />} />
       <Route path="/movie/:id" element={<DetailMovie />} />
 
       <Route

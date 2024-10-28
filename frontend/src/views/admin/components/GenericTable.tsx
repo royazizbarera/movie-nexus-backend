@@ -65,15 +65,16 @@ interface GenericTableProps<T> {
   columns: Column<T>[];
   renderRowActions?: (item: T) => React.ReactNode; // Optionally allow custom row actions
   options?: { [key: string]: string[] }; // Optional options for fields like genres
+
   onEdit: (updatedItem: T) => Promise<void>; // Function to handle edit submission
-  onDelete: (item: T) => void; // Function to handle delete
-  onAdd?: (newItem: T) => void; // Function to handle add
+  onDelete: (item: T) => Promise<void>; // Function to handle delete
+  onAdd?: (newItem: T) => Promise<void>; // Function to handle add
   onPageChange: (page: number) => void; // Function to handle pagination
   page: number; // Current page
   pageSize: number; // Items per page
   totalItems: number; // Total items
   totalPages: number; // Total page
-  
+
   filters?: { [key: string]: string[] | number[] | boolean[] }; // Optional options for fields like genres
   onFilterChange?: (key: string, value: string) => void; // Optional filter change handler
   applySearch?: boolean;
@@ -289,11 +290,11 @@ export default function GenericTable<T>({
     switch (col.type) {
       case "string":
         return (
-          <Input
-            readOnly={col.readonly}
-            name={String(col.key)} // Menggunakan name untuk FormData
-            defaultValue={value as string}
-          />
+            <Input
+              readOnly={col.readonly}
+              name={String(col.key)} // Menggunakan name untuk FormData
+              defaultValue={value as string}
+            />
         );
       case "number":
         return (
@@ -422,7 +423,7 @@ export default function GenericTable<T>({
           expanded: "0.2s ease",
         }}
         sx={{
-          flexGrow: '0 !important',
+          flexGrow: "0 !important",
         }}
       >
         <Accordion>
@@ -524,6 +525,14 @@ export default function GenericTable<T>({
         </Accordion>
       </AccordionGroup>
 
+      {/* n item selected */}
+      <Box ml={1}>
+        <Typography level="body-md">
+          {selected.length > 0
+            ? `${selected.length} item selected`
+            : ""}
+        </Typography>
+      </Box>
       {/* Tabel */}
       <Sheet
         variant="outlined"
@@ -790,7 +799,7 @@ export default function GenericTable<T>({
           </DialogTitle>
           <Divider />
           <DialogContent>
-            {`Are you sure you want to discard the items?`}
+            {`Are you sure you want to discard the ${selected.length} items?`}
           </DialogContent>
 
           <DialogActions>

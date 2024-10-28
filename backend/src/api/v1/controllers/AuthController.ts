@@ -89,11 +89,15 @@ class AuthController {
       const token = generateToken(user.id, user.email);
       setTokenCookies(res, token);
 
-      // kirim kode verifikasi ke email
-      await MailService.sendVerificationCode(
-        user.email,
-        user.verificationCode!
-      );
+      try {
+        // kirim kode verifikasi ke email
+        await MailService.sendVerificationCode(
+          user.email,
+          user.verificationCode!
+        );
+      } catch (error) {
+        console.log("Failed to send verification code", error);
+      }
       console.info(`User ${user.email} sign up`);
       // kirim response
       return res.status(HttpStatus.CREATED).json(
