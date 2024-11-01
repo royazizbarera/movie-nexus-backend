@@ -21,15 +21,21 @@ interface DetailMovieComponentProps {
 export default function DetailMovieComponent({
   movie = {} as MovieModel,
 }: DetailMovieComponentProps) {
-  const [genres, setGenres] = React.useState< { genre: GenreModel }[]>([]);
-  const [actors, setActors] = React.useState< { actor: ActorModel }[]>([]);
+  const [genres, setGenres] = React.useState<GenreModel[]>([]);
+  const [actors, setActors] = React.useState<ActorModel[]>([]);
   const [director, setDirector] = React.useState<DirectorModel | null>(null);
   // const [reviews, setReviews] = React.useState<any[]>([]);
 
   React.useEffect(() => {
-    setGenres(movie.genres);
-    setDirector(movie.director);
-    setActors(movie.actors);
+    console.info("DetailMovieComponents: ", movie);
+    console.info("DetailMovieComponents genres: ", movie?.genres);
+    console.info("DetailMovieComponents actors: ", movie?.actors);
+    // console.info("DetailMovieComponents genres 1: ", movie?.genres[0].genre);
+    if (movie && movie.genres && movie.actors) {
+      setGenres(movie.genres || []);
+      setDirector(movie.director || null);
+      setActors(movie.actors || []);
+    }
     // setReviews(movie.reviews);
   }, [movie]);
 
@@ -96,7 +102,8 @@ export default function DetailMovieComponent({
                       color: "common.white",
                     }}
                   >
-                    {movie.releaseDate} ・ {movie.rating} ・{" "}
+                    {new Date(movie.releaseDate).getFullYear()} ・{" "}
+                    {movie.rating}
                   </Typography>
                 </Box>
                 <Box display="flex" alignItems="center" gap={4}>
@@ -137,7 +144,7 @@ export default function DetailMovieComponent({
             gap: 1, // Jarak antar chip
           }}
         >
-          {genres?.map((genre: any, index: number) => (
+          {genres?.map((genreObj: GenreModel, index: number) => (
             <Chip
               variant="outlined"
               size="lg"
@@ -152,7 +159,7 @@ export default function DetailMovieComponent({
                 // backgroundColor: theme.palette.background.paper, // Ensure background contrast
               }}
             >
-              {genre.name}
+              {String(genreObj?.name)}
             </Chip>
           ))}
         </Box>

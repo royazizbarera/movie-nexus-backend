@@ -31,7 +31,6 @@ import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
 import DeleteForeverRoundedIcon from "@mui/icons-material/DeleteForeverRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import FilterAltRoundedIcon from "@mui/icons-material/FilterAltRounded";
-import DetailMovie from "../../pages/DetailMovie";
 
 const styleSelect = {
   width: "100%",
@@ -84,7 +83,7 @@ interface GenericTableProps<T> {
   realtimeSearch?: boolean; // Optional realtime search
   onSearchApply?: (value: string) => void;
 
-  detailItem?: React.ReactNode;
+  onDetail?: (item: T) => void;
 }
 export default function GenericTable<T>({
   title,
@@ -107,7 +106,7 @@ export default function GenericTable<T>({
   pageSize,
   totalItems,
   totalPages,
-  detailItem,
+  onDetail,
 }: GenericTableProps<T>) {
   const [selected, setSelected] = React.useState<readonly (keyof T)[]>([]);
   const [selectedItem, setSelectedItem] = React.useState<T | null>(null);
@@ -119,8 +118,6 @@ export default function GenericTable<T>({
   const [openEditModal, setOpenEditModal] = React.useState(false);
   const [openDeleteItemModal, setOpenDeleteItemModal] = React.useState(false);
   const [openDeleteItemsModal, setOpenDeleteItemsModal] = React.useState(false);
-  // component inside the detailItem
-  const [openDetailItem, setOpenDetailItem] = React.useState(false);
 
   // Handle pagination
   const handlePageChange = (newPage: number) => {
@@ -163,14 +160,6 @@ export default function GenericTable<T>({
     setOpenEditModal(false);
     setSelectedItem(null);
   };
-
-  // const handleOpenDetailItem = () => {
-  //   setOpenDetailItem(true);
-  // }
-
-  const handleCloseDetailItem = () => {
-    setOpenDetailItem(false);
-  }
 
   // Handle delete item
   const handleDeleteItem = async () => {
@@ -446,9 +435,13 @@ export default function GenericTable<T>({
                   handleFormAddSubmit(event);
                 }}
               >
-                <Stack spacing={2} direction={"row"} sx={{
-                  alignItems: "flex-end",
-                }}>
+                <Stack
+                  spacing={2}
+                  direction={"row"}
+                  sx={{
+                    alignItems: "flex-end",
+                  }}
+                >
                   {columns.map((col) =>
                     col.readonly ? null : (
                       <FormControl key={col.key as string}>
@@ -699,7 +692,14 @@ export default function GenericTable<T>({
                   />
                 </td>
                 {columns.map((col) => (
-                  <td key={col.key as string}>{renderCellData(item, col)}</td>
+                  <td
+                    key={col.key as string}
+                    onClick={() => {
+                      onDetail && onDetail(item);
+                    }}
+                  >
+                    {renderCellData(item, col)}
+                  </td>
                 ))}
                 <td>
                   <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
@@ -883,20 +883,6 @@ export default function GenericTable<T>({
             </Button>
           </DialogActions>
         </ModalDialog>
-      </Modal>
-
-      {/* Detail Item Modal */}
-      <Modal
-        open={openDetailItem}
-        onClose={handleCloseDetailItem} // Menutup modal tanpa mereset newItem
-        sx={{ zIndex: 20000 }}
-      >
-        <ModalOverflow>
-          <ModalDialog layout="fullscreen">
-            <ModalClose />
-            <DetailMovie />
-          </ModalDialog>
-        </ModalOverflow>
       </Modal>
     </React.Fragment>
   );

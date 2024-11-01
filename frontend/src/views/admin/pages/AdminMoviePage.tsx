@@ -4,6 +4,7 @@ import CssBaseline from "@mui/joy/CssBaseline";
 import Box from "@mui/joy/Box";
 import Breadcrumbs from "@mui/joy/Breadcrumbs";
 import Typography from "@mui/joy/Typography";
+import ModalDialog from "@mui/joy/ModalDialog";
 
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 
@@ -13,7 +14,12 @@ import BreadcrumbsHome from "../components/BreadcrumbsHome";
 import BreadcrumbsDashboard from "../components/BreadcrumbsDashboard";
 import { AdminTableLayout } from "../layouts/AdminTableLayout";
 import GenericTable, { Column } from "../components/GenericTable";
-import { MovieParamsModel, MovieModelTable, convertMovieModelToTable } from "../../../models/MovieModel";
+import {
+  MovieParamsModel,
+  MovieModelTable,
+  convertMovieModelToTable,
+  MovieModel,
+} from "../../../models/MovieModel";
 import genreController from "../../../controllers/GenreController";
 import { GenreModel } from "../../../models/GenreModel";
 import { PaginationModel } from "../../../models/PaginationModel";
@@ -29,10 +35,8 @@ import {
   SORT_ORDER_DROPDOWN,
 } from "../../../configs/constants";
 import movieController from "../../../controllers/MovieController";
-
-
-
-
+import { Modal, ModalClose, ModalOverflow } from "@mui/joy";
+import DetailMovieComponent from "../components/DetailMovieComponent";
 
 const columns: Column<MovieModelTable>[] = [
   {
@@ -67,6 +71,7 @@ const columns: Column<MovieModelTable>[] = [
 ];
 
 export default function AdminMoviePage() {
+  const [realMovies, setRealMovies] = React.useState<MovieModel[]>([]);
   const [movies, setMovies] = React.useState<MovieModelTable[]>([]);
   const [pagination, setPagination] = React.useState<PaginationModel>({
     page: 1,
@@ -84,10 +89,25 @@ export default function AdminMoviePage() {
   const [awards, setAwards] = React.useState<string[]>([]);
   const [countries, setCountries] = React.useState<string[]>([]);
 
+  const [openDetailItem, setOpenDetailItem] = React.useState(false);
+  // selected item
+  const [selectedItem, setSelectedItem] = React.useState<MovieModel | null>(
+    null
+  );
+
+  const handleOpenDetailItem = () => {
+    setOpenDetailItem(true);
+  };
+
+  const handleCloseDetailItem = () => {
+    setOpenDetailItem(false);
+  };
+
   const fetchMovies = async (movieParamsModel?: MovieParamsModel) => {
     try {
       const response = await movieController.getMovies(movieParamsModel);
       const { data: movies, pagination } = response;
+      setRealMovies(movies);
       setMovies(movies.map(convertMovieModelToTable));
       setPagination(pagination!);
     } catch (error) {
@@ -144,8 +164,6 @@ export default function AdminMoviePage() {
       );
     } catch (error) {}
   };
-
-
 
   React.useEffect(() => {
     getGenres();
@@ -261,13 +279,33 @@ export default function AdminMoviePage() {
             onSearchApply={(searchTerm) =>
               handleFilterChange("searchTerm", searchTerm)
             }
-
-            
+            onDetail={(movieTable) => {
+              const movie = realMovies.find((m) => m.id === movieTable.id);
+              setSelectedItem(movie || null);
+              console.info("Detail movie table: ", movieTable);
+              console.info("Detail movie: ", movie);
+              handleOpenDetailItem();
+            }}
           />
 
           {/* <OrderList /> */}
         </AdminTableLayout>
       </Box>
+      <React.Fragment>
+        {/* Detail Item Modal */}
+        <Modal
+          open={openDetailItem}
+          onClose={handleCloseDetailItem} // Menutup modal tanpa mereset newItem
+          sx={{ zIndex: 20000 }}
+        >
+          <ModalOverflow>
+            <ModalDialog layout="fullscreen">
+              <ModalClose />
+              {selectedItem && <DetailMovieComponent movie={selectedItem} />}
+            </ModalDialog>
+          </ModalOverflow>
+        </Modal>
+      </React.Fragment>
     </CssVarsProvider>
   );
 }
