@@ -37,7 +37,7 @@ const columns: any[] = [
     readonly: true,
     width: 70,
   },
-  { key: "name", label: "Name", type: "string", width: "100%" },
+  { key: "name", label: "Genre", type: "string", width: "100%" },
 ];
 
 export default function AdminGenrePage() {
@@ -137,6 +137,7 @@ export default function AdminGenrePage() {
           </Box>
 
           <GenericTable<GenreModelTable>
+            simpleAddItem
             title="Genres"
             data={genres}
             columns={columns}

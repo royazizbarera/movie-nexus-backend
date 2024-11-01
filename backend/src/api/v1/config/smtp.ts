@@ -12,7 +12,7 @@ import nodemailer from "nodemailer";
 // });
 
 const transport = nodemailer.createTransport({
-  host: process.env.GMAIL_HOST,
+  host: "smtp.gmail.com",
   port: 465,
   secure: true,
   auth: {

@@ -37,7 +37,7 @@ const columns: any[] = [
     readonly: true,
     width: 70,
   },
-  { key: "name", label: "Name", type: "string", width: "100%" },
+  { key: "name", label: "Country", type: "string", width: "100%" },
 ];
 
 export default function AdminCountryPage() {
@@ -134,6 +134,7 @@ export default function AdminCountryPage() {
             </Breadcrumbs>
           </Box>
           <GenericTable<CountryModelTable>
+            simpleAddItem
             title="Countries"
             data={countries}
             columns={columns}

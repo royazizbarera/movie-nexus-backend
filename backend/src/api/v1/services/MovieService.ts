@@ -352,9 +352,9 @@ class MovieService {
             });
         }
 
-        if (filters) {
-            whereClause.AND.push(handleFilter(filters));
-        }
+        // if (filters) {
+        //     whereClause.AND.push(handleFilter(filters));
+        // }
 
         if (whereClause.AND.length === 0) {
             delete whereClause.AND;
