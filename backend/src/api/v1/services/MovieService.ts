@@ -324,7 +324,7 @@ class MovieService {
                 totalItems = await this.countMovies(whereClause);
             }
 
-            return [movies, totalItems];
+            return [this.refactorMovies(movies), totalItems];
         } catch (error) {
             console.error("Failed to fetch movies: ", error);
             throw new Error("Error fetching movies");
