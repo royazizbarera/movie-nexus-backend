@@ -131,7 +131,7 @@ class AwardController {
      */
     async createAward(req: Request, res: Response): Promise<Response> {
         try {
-            const awardData = req.query;
+            const awardData = req.body;
 
             const newAward = await awardService.createAward(awardData);
 
@@ -166,7 +166,7 @@ class AwardController {
      */
     async updateAwardById(req: Request, res: Response): Promise<Response> {
         const awardId = parseInt(req.params.id, 10);
-        const awardData = req.query;
+        const awardData = req.body;
 
         try {
             const updatedAward = await awardService.updateAwardById(awardId, awardData);

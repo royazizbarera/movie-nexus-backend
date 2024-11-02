@@ -125,7 +125,7 @@ class CountryController {
      */
     async createCountry(req: Request, res: Response): Promise<Response> {
         try {
-            const countryData = req.query;
+            const countryData = req.body;
 
             const newCountry = await countryService.createCountry(countryData);
 
@@ -160,7 +160,7 @@ class CountryController {
      */
     async updateCountryByCode(req: Request, res: Response): Promise<Response> {
         const countryCode = req.params.code;
-        const countryData = req.query;
+        const countryData = req.body;
 
         try {
             const updatedCountry = await countryService.updateCountryByCode(countryCode, countryData);

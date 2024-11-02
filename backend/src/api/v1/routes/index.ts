@@ -52,7 +52,7 @@ routers.use("/auth", authRouter);
  * @route /user
  * @description Routes for user-related operations
  */
-routers.use("/user", usersRouter);
+routers.use("/users", usersRouter);
 
 /**
  * @route /mail

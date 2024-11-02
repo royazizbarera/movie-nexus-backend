@@ -1,213 +1,66 @@
-// import { Request, Response ,NextFunction } from "express";
-// import UserService from "../services/UserService";
-// import ResponseApi from "../config/ResponseApi";
+import HttpStatus from "../config/constants/HttpStatus";
+import ResponseApi from "../config/ResponseApi";
+import userService from "../services/UserService";
+import { Response, Request } from "express";
 
-// class UserController {
-//   signUpEmailAndPassword = async (req: Request, res: Response) => {
-//     try {
-//       const { username, email, password } = req.body;
-//       const user = await UserService.signUpEmailAndPassword({
-//         username,
-//         email,
-//         password,
-//       });
-//       return res.status(201).json(
-//         ResponseApi({
-//           code: 201,
-//           message: "User created successfully",
-//           data: user,
-//           version: 1.0,
-//         })
-//       );
-//     } catch (error) {
-//       return res.json(
-//         ResponseApi({
-//           code: 500,
-//           message: String(error),
-//           errors: error,
-//           version: 1.0,
-//         })
-//       );
-//     }
-//   };
+class UserController {
+    /**
+     * Retrieves a list of users based on pagination, search parameters, and filters.
+     *
+     * @param {Request} req - The Express request object containing query parameters.
+     * @param {Response} res - The Express response object to send back the result.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the users data and pagination info.
+     * @throws {Error} If there is an issue fetching the users, an error message will be returned.
+     */
+    async getUsers(req: Request, res: Response): Promise<Response> {
+        try {
+            const {
+                page = "1",
+                pageSize = "24",
+                searchTerm = '',
+                sortBy = '',
+                sortOrder = 'asc',
+            } = req.query;
 
-//   signInWithEmailAndPassword = async (req: Request, res: Response) => {
-//     try {
-//       const { email, password } = req.body;
-//       const user = await UserService.signInWithEmailAndPassword(email, password);
-//       return res.status(200).json(
-//         ResponseApi({
-//           code: 200,
-//           message: "User signed in successfully",
-//           data: user,
-//           version: 1.0,
-//         })
-//       );
-//     } catch (error) {
-//       return res.json(
-//         ResponseApi({
-//           code: 500,
-//           message: String(error),
-//           errors: error,
-//           version: 1.0,
-//         })
-//       );
-//     }
-//   };
+            const parsedPage = parseInt(page as string, 10) || 1;
+            const parsedPageSize = parseInt(pageSize as string, 10) || 24;
 
-//   // check is verified
-//   isVerified = async (req: Request, res: Response) => {
-//     try {
-//       const { user } = req.body;
-//       const isVerified = await UserService.isVerified(user.email);
-//       return res.status(200).json(
-//         ResponseApi({
-//           code: 200,
-//           message: "User status verified",
-//           data: isVerified,
-//           version: 1.0,
-//         })
-//       );
-//     } catch (error) {
-//       return res.json(
-//         ResponseApi({
-//           code: 500,
-//           message: String(error),
-//           errors: error,
-//           version: 1.0,
-//         })
-//       );
-//     }
-//   };
+            const [users, totalItems] = await userService.getUsers({
+                page: parsedPage,
+                pageSize: parsedPageSize,
+                params: {
+                    searchTerm: searchTerm as string,
+                    sortBy: sortBy as string,
+                    sortOrder: sortOrder as "asc" | "desc",
+                },
+            });
 
-//   // middleware verify token
-//   verifyToken = async (req: Request, res: Response, next: NextFunction) => {
-//     try {
-//       const { token } = req.body;
-//       const user = await UserService.verifyToken(token);
-//       if (user) {
-//         req.body.user = user;
-//         return next();
-//       }
-//       return res.json(
-//         ResponseApi({
-//           code: 500,
-//           message: "Token is not valid",
-//           errors: "Token is not valid",
-//           version: 1.0,
-//         })
-//       );
-//     } catch (error) {
-//       return res.json(
-//         ResponseApi({
-//           code: 500,
-//           message: String(error),
-//           errors: error,
-//           version: 1.0,
-//         })
-//       );
-//     }
-//   };
+            return res.json(
+                ResponseApi({
+                    code: HttpStatus.OK,
+                    message: "Users fetched successfully",
+                    data: users,
+                    version: 1.0,
+                    pagination: {
+                        page: parsedPage,
+                        pageSize: parsedPageSize,
+                        totalItems,
+                        totalPages: Math.ceil(totalItems / parsedPageSize),
+                    },
+                })
+            );
+        } catch (error) {
+            console.error("Error fetching users: ", error);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
+                ResponseApi({
+                    code: HttpStatus.INTERNAL_SERVER_ERROR,
+                    message: "Failed to fetch users",
+                    errors: error instanceof Error ? error.message : String(error),
+                })
+            );
+        }
+    }
+}
 
-//   // get email from token
-//   getEmailFromToken = async (req: Request, res: Response) => {
-//     try {
-//       const { token } = req.body;
-//       const email = await UserService.getEmailFromToken(token);
-//       return res.status(200).json(
-//         ResponseApi({
-//           code: 200,
-//           message: "Email from token",
-//           data: email,
-//           version: 1.0,
-//         })
-//       );
-//     } catch (error) {
-//       return res.json(
-//         ResponseApi({
-//           code: 500,
-//           message: String(error),
-//           errors: error,
-//           version: 1.0,
-//         })
-//       );
-//     }
-//   };
-
-//   createVerificationCode = async (req: Request, res: Response) => {
-//     try {
-//       const { email } = req.body;
-//       const verificationCode = await UserService.createVerificationCode(email);
-//       return res.status(200).json(
-//         ResponseApi({
-//           code: 200,
-//           message: "Verification code created",
-//           data: verificationCode,
-//           version: 1.0,
-//         })
-//       );
-//     } catch (error) {
-//       return res.json(
-//         ResponseApi({
-//           code: 500,
-//           message: String(error),
-//           errors: error,
-//           version: 1.0,
-//         })
-//       );
-//     }
-//   }
-
-//   getVerificationCode = async (req: Request, res: Response) => {
-//     try {
-//       const { email } = req.body;
-//       const verificationCode = await UserService.getVerificationCode(email);
-//       return res.status(200).json(
-//         ResponseApi({
-//           code: 200,
-//           message: "Verification code",
-//           data: verificationCode,
-//           version: 1.0,
-//         })
-//       );
-//     } catch (error) {
-//       return res.json(
-//         ResponseApi({
-//           code: 500,
-//           message: String(error),
-//           errors: error,
-//           version: 1.0,
-//         })
-//       );
-//     }
-//   }
-
-//   verifyVerificationCode = async (req: Request, res: Response) => {
-//     try {
-//       const { email, verificationCode } = req.body;
-//       const isVerified = await UserService.verifyVerificationCode(email, verificationCode);
-//       return res.status(200).json(
-//         ResponseApi({
-//           code: 200,
-//           message: "Verification code verified",
-//           data: isVerified,
-//           version: 1.0,
-//         })
-//       );
-//     } catch (error) {
-//       return res.json(
-//         ResponseApi({
-//           code: 500,
-//           message: String(error),
-//           errors: error,
-//           version: 1.0,
-//         })
-//       );
-//     }
-//   }
-
-// }
-
-// export default new UserController();
-
-export default class UserController {}
+const userController = new UserController();
+export default userController;
