@@ -4,12 +4,6 @@ import { verifyToken } from "../middlewares/verifyToken";
 
 const router = express.Router();
 
-router.get("/", genreController.getGenres);
-router.post("/", genreController.addGenre);
-router.delete("/:id", genreController.deleteGenre);
-router.put("/:id", genreController.updateGenre);
-
-
 router.get("/:id", genreController.getGenreById);
 
 router.post("/", verifyToken, genreController.createGenre);

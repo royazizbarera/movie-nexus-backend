@@ -4,9 +4,9 @@ import {verifyToken} from "../middlewares/verifyToken";
 
 const router = express.Router();
 
-router.get("/", verifyToken, movieController.getMovies);
+router.get("/", movieController.getMovies);
 
-router.get("/:id", verifyToken, movieController.getMovieById);
+router.get("/:id", movieController.getMovieById);
 
 router.post("/", verifyToken, movieController.createMovie);
 
