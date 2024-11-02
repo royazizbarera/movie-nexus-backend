@@ -2,7 +2,6 @@ import HttpStatus from "../config/constants/HttpStatus";
 import ResponseApi from "../config/ResponseApi";
 import actorService from "../services/ActorService";
 import {Response, Request} from "express";
-import movieService from "../services/MovieService";
 
 class ActorController {
     /**
@@ -19,11 +18,10 @@ class ActorController {
             const parsedPageSize = parseInt(req.query.pageSize as string) || 24; // Default ke 24 jika tidak ada
 
             const {
-                searchTerm = '', // Default ke string kosong
-                country = '', // Default ke string kosong
-                sortBy = '', // Default ke string kosong
-                sortOrder = 'asc', // Default ke 'asc'
-                filters = [], // Default ke array kosong
+                searchTerm = '',
+                country = '',
+                sortBy = '',
+                sortOrder = 'asc',
             } = req.query;
 
             const [actors, totalItems] = await actorService.getActors({
@@ -34,7 +32,6 @@ class ActorController {
                     country: country as string,
                     sortBy: sortBy as string,
                     sortOrder: sortOrder as "asc" | "desc",
-                    filters: Array.isArray(filters) ? filters : [], // Pastikan filters adalah array
                 },
             });
 
@@ -152,12 +149,12 @@ class ActorController {
         const actorData = req.query;
 
         try {
-            const updatedMovie = await actorService.updateActorById(actorId, actorData);
+            const updatedActor = await actorService.updateActorById(actorId, actorData);
 
             return res.json(ResponseApi({
                 code: HttpStatus.OK,
                 message: "Actor updated successfully",
-                data: updatedMovie,
+                data: updatedActor,
                 version: 1.0,
             }));
         } catch (error) {

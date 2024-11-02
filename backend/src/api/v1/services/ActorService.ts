@@ -1,6 +1,6 @@
 import prisma from "../config/client";
 import SearchParams from "../helpers/SearchParams";
-import {handleFilter} from "../helpers/handleFilter";
+import {addCountryFilter} from "../helpers/fieldFilter";
 
 class ActorService {
     joinTable = {
@@ -19,14 +19,13 @@ class ActorService {
                     },
                 });
             }
-            return prisma.movie.count({where: whereClause});
+            return prisma.actor.count({where: whereClause});
         } catch (error) {
-            console.error("Error counting movies:", error);
-            throw new Error("Could not count movies");
+            console.error("Error counting actors:", error);
+            throw new Error("Could not count actors");
         }
     }
 
-    // Metode untuk mendapatkan semua actor
     async getActors({
                         page = 1,
                         pageSize = 24,
@@ -37,22 +36,10 @@ class ActorService {
         params: SearchParams;
     }): Promise<any[]> {
         const skip = (page - 1) * pageSize;
-        const {filters, searchTerm, country, sortBy, sortOrder} = params;
+        const {searchTerm, country, sortBy, sortOrder} = params;
         const whereClause: any = {AND: []};
 
-        if (filters) {
-            whereClause.AND = handleFilter(filters);
-        }
-
-        const addCountryFilter = (country: string) => {
-            whereClause.AND.push({
-                country: {
-                    name: country,
-                },
-            });
-        };
-
-        if (country) addCountryFilter(country);
+        if (country) addCountryFilter(whereClause, country);
 
         if (whereClause.AND.length === 0) {
             delete whereClause.AND;
@@ -96,27 +83,17 @@ class ActorService {
 
             return [actors, totalItems];
         } catch (error) {
-            console.error("Failed to fetch actors: ", error);
             throw new Error("Error fetching actors");
         }
     }
 
-    // Metode untuk mendapatkan satu actor berdasarkan ID
     async getActorById(id: number) {
         try {
-            // Mengambil actor berdasarkan ID
-            const actor = await prisma.actor.findUnique({
+            return await prisma.actor.findUnique({
                 where: {
                     id: id,
                 },
             });
-
-            // Jika actor tidak ditemukan, lempar error
-            if (!actor) {
-                throw new Error(`Actor with ID ${id} not found`);
-            }
-
-            return actor;
         } catch (error) {
             throw new Error(`Could not fetch actor with ID ${id}`);
         }
@@ -154,16 +131,10 @@ class ActorService {
 
     async updateActorById(id: number, updatedData: any): Promise<any> {
         try {
-            const existingActor = await prisma.actor.findUnique({ where: { id } });
-
-            if (!existingActor) {
-                throw new Error(`Actor with ID ${id} not found.`);
-            }
-
             const dataToUpdate: any = {
                 ...(updatedData.name ? { name: updatedData.name } : {}),
                 ...(updatedData.photoUrl ? { photoUrl: updatedData.photoUrl } : {}),
-                ...(updatedData.birthDate ? { birthDate: updatedData.birthDate } : {}),
+                ...(updatedData.birthDate ? { birthDate: new Date(updatedData.birthDate) } : {}),
                 ...(updatedData.countryCode ? { country: { connect: { code: updatedData.countryCode } } } : {})
             };
 

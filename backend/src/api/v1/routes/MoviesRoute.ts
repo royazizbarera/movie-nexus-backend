@@ -1,25 +1,17 @@
 import express from "express";
 import movieController from "../controllers/MovieController";
+import {verifyToken} from "../middlewares/verifyToken";
 
 const router = express.Router();
 
-// router.get("/search", movieController.searchMovies)
+router.get("/", verifyToken, movieController.getMovies);
 
-router.get("/", movieController.getMovies);
+router.get("/:id", verifyToken, movieController.getMovieById);
 
-router.get("/:id", movieController.getMovieById);
+router.post("/", verifyToken, movieController.createMovie);
 
-router.put("/:id", movieController.updateMovieById);
+router.put("/:id", verifyToken, movieController.updateMovieById);
 
-router.delete("/:id", movieController.deleteMovieById);
-
-// add a new route to create a movie
-router.post("/", movieController.createMovie);
-
-// add a new route to delete a movie by its ID
-router.delete("/:id", movieController.deleteMovieById);
-
-// add a new route to update a movie by its ID
-router.put("/:id", movieController.updateMovieById);
+router.delete("/:id", verifyToken, movieController.deleteMovieById);
 
 export default router;

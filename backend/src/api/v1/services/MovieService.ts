@@ -1,5 +1,13 @@
 import prisma from "../config/client";
 import SearchParams from "../helpers/SearchParams";
+import {
+    addAwardFilter,
+    addDirectorFilter,
+    addMovieYearFilter,
+    addActorFilter,
+    addCountryFilter,
+    addGenreFilter
+} from "../helpers/fieldFilter";
 
 class MovieService {
     joinTable = {
@@ -123,7 +131,7 @@ class MovieService {
                         country: {connect: {code: countryCode}},
                         director: {connect: {id: parseInt(directorId)}},
                         genres: {
-                            create: genres.map((id: any) => ({genre: {connect: {id: parseInt(id)}}})),
+                            create: genres.map((id: any) => ({connect: {id: parseInt(id)}})),
                         },
                         actors: {
                             create: actors.map((id: any) => ({actor: {connect: {id: parseInt(id)}}})),
@@ -176,28 +184,22 @@ class MovieService {
      */
     async updateMovieById(id: number, updatedData: any): Promise<any> {
         try {
-            const existingMovie = await prisma.movie.findUnique({ where: { id } });
-
-            if (!existingMovie) {
-                throw new Error(`Movie with ID ${id} not found.`);
-            }
-
             const dataToUpdate: any = {
-                ...(updatedData.title ? { title: updatedData.title } : {}),
-                ...(updatedData.synopsis ? { synopsis: updatedData.synopsis } : {}),
-                ...(updatedData.posterUrl ? { posterUrl: updatedData.posterUrl } : {}),
-                ...(updatedData.releaseDate ? { releaseDate: updatedData.releaseDate } : {}),
-                ...(updatedData.approvalStatus ? { approvalStatus: updatedData.approvalStatus } : {}),
-                ...(updatedData.rating !== undefined ? { rating: updatedData.rating } : {}),
-                ...(updatedData.countryCode ? { country: { connect: { code: updatedData.countryCode } } } : {}),
-                ...(updatedData.directorId ? { director: { connect: { id: updatedData.directorId } } } : {}),
-                ...(updatedData.genres ? { genres: this.updateRelations(updatedData.genres) } : {}),
-                ...(updatedData.actors ? { actors: this.updateRelations(updatedData.actors) } : {}),
-                ...(updatedData.awards ? { awards: this.updateRelations(updatedData.awards) } : {}),
+                ...(updatedData.title ? {title: updatedData.title} : {}),
+                ...(updatedData.synopsis ? {synopsis: updatedData.synopsis} : {}),
+                ...(updatedData.posterUrl ? {posterUrl: updatedData.posterUrl} : {}),
+                ...(updatedData.releaseDate ? {releaseDate: new Date(updatedData.releaseDate)} : {}),
+                ...(updatedData.approvalStatus ? {approvalStatus: updatedData.approvalStatus} : {}),
+                ...(updatedData.rating !== undefined ? {rating: updatedData.rating} : {}),
+                ...(updatedData.countryCode ? {country: {connect: {code: updatedData.countryCode}}} : {}),
+                ...(updatedData.directorId ? {director: {connect: {id: updatedData.directorId}}} : {}),
+                ...(updatedData.genres ? {genres: this.updateRelations(updatedData.genres)} : {}),
+                ...(updatedData.actors ? {actors: this.updateRelations(updatedData.actors)} : {}),
+                ...(updatedData.awards ? {awards: this.updateRelations(updatedData.awards)} : {}),
             };
 
             const updatedMovie = await prisma.movie.update({
-                where: { id },
+                where: {id},
                 data: dataToUpdate,
                 ...this.joinTable,
             });
@@ -219,9 +221,9 @@ class MovieService {
         return relations.length > 0
             ? {
                 deleteMany: {},
-                connect: relations.map(({ id }) => ({ id })),
+                connect: relations.map(({id}) => ({id})),
             }
-            : { deleteMany: {} };
+            : {deleteMany: {}};
     }
 
     /**
@@ -274,82 +276,13 @@ class MovieService {
         const {searchTerm, sortBy, sortOrder, genre, country, actor, year, award, director} = params;
         const whereClause: any = {AND: []};
 
-        const addGenreFilter = (genre: string) => {
-            whereClause.AND.push({
-                genres: {
-                    some: {
-                        genre: {
-                            name: {
-                                contains: genre,
-                                mode: "insensitive",
-                            },
-                        },
-                    },
-                },
-            });
-        };
 
-        const addCountryFilter = (country: string) => {
-            whereClause.AND.push({
-                country: {
-                    name: country,
-                },
-            });
-        };
-
-        const addActorFilter = (actor: string) => {
-            whereClause.AND.push({
-                actors: {
-                    some: {
-                        actor: {
-                            name: {
-                                contains: actor,
-                                mode: "insensitive",
-                            },
-                        },
-                    },
-                },
-            });
-        };
-
-        if (genre) addGenreFilter(genre);
-        if (country) addCountryFilter(country);
-        if (actor) addActorFilter(actor);
-
-        if (year) {
-            whereClause.AND.push({
-                releaseDate: {
-                    gte: new Date(year, 0),
-                    lt: new Date(year + 1, 0),
-                },
-            });
-        }
-
-        if (award) {
-            whereClause.AND.push({
-                awards: {
-                    some: {
-                        award: {
-                            name: {
-                                contains: award,
-                                mode: "insensitive",
-                            },
-                        },
-                    },
-                },
-            });
-        }
-
-        if (director) {
-            whereClause.AND.push({
-                director: {
-                    name: {
-                        contains: director,
-                        mode: "insensitive",
-                    },
-                },
-            });
-        }
+        if (genre) addGenreFilter(whereClause, genre);
+        if (country) addCountryFilter(whereClause, country);
+        if (actor) addActorFilter(whereClause, actor);
+        if (year) addMovieYearFilter(whereClause, year);
+        if (award) addAwardFilter(whereClause, award);
+        if (director) addDirectorFilter(whereClause, director);
 
         if (whereClause.AND.length === 0) {
             delete whereClause.AND;
