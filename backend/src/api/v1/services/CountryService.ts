@@ -98,7 +98,7 @@ class CountryService {
      * @returns {Promise<any>} The country data.
      * @throws {Error} If there is an issue fetching the country.
      */
-    async getCountryByCode(code: string) {
+    async getCountryByCode(code: string): Promise<any> {
         try {
             return await prisma.country.findUnique({
                 where: {

@@ -99,7 +99,7 @@ class GenreService {
      * @returns {Promise<any>} The genre data.
      * @throws {Error} If there is an issue fetching the genre.
      */
-    async getGenreById(id: number) {
+    async getGenreById(id: number): Promise<any> {
         try {
             return await prisma.genre.findUnique({
                 where: {

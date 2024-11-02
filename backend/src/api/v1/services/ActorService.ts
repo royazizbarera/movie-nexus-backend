@@ -109,7 +109,7 @@ class ActorService {
      * @returns {Promise<any>} The actor data.
      * @throws {Error} If there is an issue fetching the actor.
      */
-    async getActorById(id: number) {
+    async getActorById(id: number): Promise<any> {
         try {
             return await prisma.actor.findUnique({
                 where: {

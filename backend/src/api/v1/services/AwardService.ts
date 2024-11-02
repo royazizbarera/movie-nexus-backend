@@ -111,7 +111,7 @@ class AwardService {
      * @returns {Promise<any>} The award data.
      * @throws {Error} If there is an issue fetching the award.
      */
-    async getAwardById(id: number) {
+    async getAwardById(id: number): Promise<any> {
         try {
             return await prisma.award.findUnique({
                 where: {
