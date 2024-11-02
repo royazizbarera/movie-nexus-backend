@@ -24,6 +24,7 @@ import {
   AccordionGroup,
   AccordionSummary,
   AccordionDetails,
+  Snackbar,
 } from "@mui/joy";
 
 import PaginationComponent from "./PaginationComponent";
@@ -31,6 +32,20 @@ import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
 import DeleteForeverRoundedIcon from "@mui/icons-material/DeleteForeverRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import FilterAltRoundedIcon from "@mui/icons-material/FilterAltRounded";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import DangerousOutlinedIcon from "@mui/icons-material/DangerousOutlined";
+interface SnackbarState {
+  title: string;
+  key?: string;
+  open: boolean;
+  vertical: "top" | "bottom";
+  horizontal: "left" | "center" | "right";
+  variant?: "solid" | "outlined" | "plain" | "soft";
+  size?: "sm" | "md" | "lg";
+  color?: "primary" | "neutral" | "danger" | "success" | "warning";
+  autoHideDuration?: number; // in ms
+}
 
 const styleSelect = {
   width: "100%",
@@ -47,28 +62,30 @@ export interface Column<T> {
   label: string;
   key: keyof T;
   type:
-    | "string"
-    | "number"
+  | "string"
+  | "number"
     | "date"
     | "boolean"
     | "string[]"
     | "number[]"
     | "string_autocomplete";
-  componentShow?: "Chip" | "Avatar" | "Icon" | "Button";
-  readonly?: boolean;
+    componentShow?: "Chip" | "Avatar" | "Icon" | "Button";
+    readonly?: boolean;
   width?: number | string;
 }
 
 interface GenericTableProps<T> {
   title?: string; // Title of the table
+  titleSolo?: string;
   data: T[];
   columns: Column<T>[];
   renderRowActions?: (item: T) => React.ReactNode; // Optionally allow custom row actions
   options?: { [key: string]: string[] }; // Optional options for fields like genres
 
-  onEdit: (updatedItem: T) => Promise<void>; // Function to handle edit submission
-  onDelete: (item: T) => Promise<void>; // Function to handle delete
-  onAdd?: (newItem: T) => Promise<void>; // Function to handle add
+  onEdit: (updatedItem: T) => Promise<void | boolean>; // Function to handle edit submission
+  onDelete: (item: T) => Promise<void | boolean>; // Function to handle delete
+  onAdd?: (newItem: T) => Promise<void | boolean>; // Function to handle add
+  simpleAddItem?: boolean; // Simple add without modal
   onPageChange: (page: number) => void; // Function to handle pagination
   page: number; // Current page
   pageSize: number; // Items per page
@@ -81,9 +98,12 @@ interface GenericTableProps<T> {
   placeholderSearch?: string;
   realtimeSearch?: boolean; // Optional realtime search
   onSearchApply?: (value: string) => void;
+
+  onDetail?: (item: T) => void;
 }
 export default function GenericTable<T>({
   title,
+  titleSolo = title,
   data,
   columns,
   renderRowActions,
@@ -96,16 +116,18 @@ export default function GenericTable<T>({
   onSearchApply = () => {},
   onEdit,
   onAdd,
+  simpleAddItem = false,
   onDelete,
   onPageChange,
   page,
   pageSize,
   totalItems,
   totalPages,
+  onDetail,
 }: GenericTableProps<T>) {
   const [selected, setSelected] = React.useState<readonly (keyof T)[]>([]);
   const [selectedItem, setSelectedItem] = React.useState<T | null>(null);
-  const [newItem, setNewItem] = React.useState<T | null>(null);
+  const [newItem, setNewItem] = React.useState<T>({} as T);
   const [searchQuery, setSearchQuery] = React.useState("");
 
   // Modal state
@@ -114,7 +136,31 @@ export default function GenericTable<T>({
   const [openDeleteItemModal, setOpenDeleteItemModal] = React.useState(false);
   const [openDeleteItemsModal, setOpenDeleteItemsModal] = React.useState(false);
 
-  // Handle pagination
+  const defaultSnackbarState: SnackbarState = {
+    title: "default_snackbar",
+    key: "default_snackbar",
+    open: false,
+    vertical: "top",
+    horizontal: "center",
+    variant: "solid",
+    size: "md",
+    color: "primary",
+    autoHideDuration: 5000,
+  };
+
+  // TODO (DONE): Snackbar for all actions
+  const [snackbarState, setSnackbarState] =
+    React.useState<SnackbarState>(defaultSnackbarState);
+
+  const handleOpenSnackbar = (newSnackbarState: SnackbarState) => {
+    setSnackbarState({ ...newSnackbarState, open: true });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarState((prev) => ({ ...prev, open: false }));
+  };
+
+  // TODO (DONE): Handle filter change
   const handlePageChange = (newPage: number) => {
     onPageChange(newPage);
   };
@@ -131,6 +177,7 @@ export default function GenericTable<T>({
     }
   };
 
+  // TODO (DONE): Handle modal behavior
   // Handle modal opening
   const handleOpenAddModal = () => {
     setNewItem({} as T);
@@ -156,6 +203,7 @@ export default function GenericTable<T>({
     setSelectedItem(null);
   };
 
+  // TODO (DONE): Handle delete item
   // Handle delete item
   const handleDeleteItem = async () => {
     if (!selectedItem) return;
@@ -169,6 +217,7 @@ export default function GenericTable<T>({
     }
   };
 
+  // TODO (DONE): Handle delete items
   const handleDeleteItems = async () => {
     try {
       // Loop melalui item yang dipilih dan panggil fungsi delete untuk setiap item
@@ -200,6 +249,7 @@ export default function GenericTable<T>({
     }
   };
 
+  // TODO (DONE): Handle form submission for edit
   // Handle form submission for edit
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -212,7 +262,26 @@ export default function GenericTable<T>({
     console.log("Submitted data:", formJson);
     if (selectedItem && onEdit) {
       try {
-        await onEdit({ ...selectedItem, ...formJson } as T); // Gabungkan data form dengan selectedItem
+        const success = await onEdit({ ...selectedItem, ...formJson } as T); // Gabungkan data form dengan selectedItem
+        success
+          ? handleOpenSnackbar({
+              ...defaultSnackbarState,
+              open: true,
+              title: "Item updated successfully",
+              key: "item_updated_success",
+              color: "success",
+              variant: "solid",
+              autoHideDuration: 5000,
+            })
+          : handleOpenSnackbar({
+              ...defaultSnackbarState,
+              open: true,
+              title: "Failed to update item",
+              key: "failed_update_item",
+              color: "danger",
+              variant: "solid",
+              autoHideDuration: 5000,
+            });
       } catch (error) {
         console.error("Failed to update data", error);
       } finally {
@@ -221,6 +290,8 @@ export default function GenericTable<T>({
       }
     }
   };
+
+  // TODO (DONE): Handle form submission for add
   const handleFormAddSubmit = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
@@ -232,17 +303,49 @@ export default function GenericTable<T>({
 
     // Lakukan sesuatu dengan data yang sudah di-submit
     console.log("Submitted data:", formJson);
+    console.info("New Item: ", newItem);
     if (newItem && onAdd) {
       try {
-        await onAdd(newItem);
+        const success = await onAdd({ ...newItem, ...formJson } as T); // Gabungkan data form dengan newItem
+        success
+          ? handleOpenSnackbar({
+              ...defaultSnackbarState,
+              open: true,
+              title: "Item added successfully",
+              key: "item_added_success",
+              color: "success",
+              variant: "solid",
+              autoHideDuration: 5000,
+            })
+          : handleOpenSnackbar({
+              ...defaultSnackbarState,
+              open: true,
+              title: "Failed to add item",
+              key: "failed_add_item",
+              color: "danger",
+              variant: "solid",
+              autoHideDuration: 5000,
+            });
       } catch (error) {
+        // open snackbar error
+        handleOpenSnackbar({
+          ...defaultSnackbarState,
+          open: true,
+          title: "Failed to add item",
+          key: "failed_add_item",
+          color: "danger",
+          variant: "solid",
+          autoHideDuration: 5000,
+        });
         console.error("Failed to add data", error);
       } finally {
         setOpenAddModal(false);
-        setNewItem(null);
+        setNewItem({} as T);
       }
     }
   };
+
+  // TODO (DONE): Helper function to render the table data based on type
   // Helper function to render the table data based on type
   const renderCellData = (item: T, col: Column<T>) => {
     const value = item[col.key];
@@ -281,7 +384,7 @@ export default function GenericTable<T>({
     }
   };
 
-  // Helper function to render input in edit modal based on type
+  // TODO (DONE): Helper function to render input in edit modal based on type
   const renderInputField = (col: Column<T>, options: string[] = []) => {
     const currentItem = selectedItem || newItem;
     if (!currentItem) return null;
@@ -290,11 +393,11 @@ export default function GenericTable<T>({
     switch (col.type) {
       case "string":
         return (
-            <Input
-              readOnly={col.readonly}
-              name={String(col.key)} // Menggunakan name untuk FormData
-              defaultValue={value as string}
-            />
+          <Input
+            readOnly={col.readonly}
+            name={String(col.key)} // Menggunakan name untuk FormData
+            defaultValue={value as string}
+          />
         );
       case "number":
         return (
@@ -378,7 +481,7 @@ export default function GenericTable<T>({
           mb: 1,
           gap: 1,
           flexDirection: { xs: "column", sm: "row" },
-          alignItems: { xs: "start", sm: "center" },
+          alignItems: { xs: "stretch", sm: "center" },
           flexWrap: "wrap",
           justifyContent: "space-between",
         }}
@@ -386,14 +489,22 @@ export default function GenericTable<T>({
         <Typography level="h2" component="h1">
           {title || "Table Title"}
         </Typography>
+        {/* Header */}
         <Box
-          display={"flex"}
           flex={1}
           flexGrow={1}
           gap={2}
           justifyContent={{
             xs: "space-between",
             sm: "flex-end",
+          }}
+          sx={{
+            alignItems: "flex-end",
+            display: "flex",
+            flexDirection: {
+              xs: "column",
+              sm: "row",
+            },
           }}
         >
           <Button
@@ -402,20 +513,129 @@ export default function GenericTable<T>({
             color="danger"
             startDecorator={<DeleteForeverRoundedIcon />}
             onClick={() => setOpenDeleteItemsModal(true)} // Ganti dari handleDeleteItem menjadi handleDeleteItems
+            sx={{
+              height: "fit-content",
+            }}
           >
             Delete Selected Items
           </Button>
-          <Button
-            variant="solid"
-            color="success"
-            startDecorator={<AddRoundedIcon />}
-            onClick={() => handleOpenAddModal()} // Ganti dari handleDeleteItem menjadi handleDeleteItems
-          >
-            Add Item
-          </Button>
+          {/* simple add item */}
+          {!simpleAddItem && (
+            <Button
+              variant="solid"
+              color="success"
+              startDecorator={<AddRoundedIcon />}
+              onClick={() => handleOpenAddModal()} // Ganti dari handleDeleteItem menjadi handleDeleteItems
+            >
+              Add Item
+            </Button>
+          )}
         </Box>
       </Box>
 
+      {simpleAddItem && (
+        <Box
+          flex={1}
+          flexGrow={1}
+          gap={2}
+          justifyContent={{
+            xs: "space-between",
+            sm: "flex-end",
+          }}
+          sx={{
+            alignItems: "flex-end",
+            display: "flex",
+            flexDirection: {
+              xs: "column",
+              sm: "columm",
+            },
+          }}
+        >
+          {/* simple add item */}
+
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              flexGrow: {
+                xs: 1,
+                sm: 1,
+                md: 1,
+              },
+              width: {
+                xs: "100%",
+                sm: "100%",
+                md: "100%",
+              },
+            }}
+          >
+            <form
+              onSubmit={(event: React.FormEvent<HTMLFormElement>) => {
+                event.preventDefault();
+                handleFormAddSubmit(event);
+                event.currentTarget.reset();
+              }}
+              style={{
+                display: "flex",
+                gap: 2,
+                flexGrow: 1,
+              }}
+            >
+              <Stack
+                spacing={2}
+                direction={"row"}
+                gap={2}
+                sx={{
+                  alignItems: "flex-end",
+                  display: "flex",
+                  flexDirection: {
+                    xs: "column",
+                    sm: "column",
+                    md: "row",
+                  },
+                  width: {
+                    xs: "100%",
+                    sm: "100%",
+                    md: "100%",
+                  },
+                }}
+              >
+                {columns.map((col) =>
+                  col.readonly ? null : (
+                    <FormControl
+                      key={col.key as string}
+                      sx={{
+                        display: "flex",
+                        flexGrow: 1,
+                        width: {
+                          xs: "100%",
+                          sm: "100%",
+                          md: "100%",
+                        },
+                      }}
+                    >
+                      <FormLabel>{col.label}</FormLabel>
+                      {renderInputField(col, options[col.key as string] || [])}
+                    </FormControl>
+                  )
+                )}
+                <Button
+                  type="submit"
+                  sx={{
+                    height: "fit-content",
+                    width: {
+                      xs: "100%",
+                      sm: "100%",
+                    },
+                  }}
+                >
+                  {"Add " + titleSolo}
+                </Button>
+              </Stack>
+            </form>
+          </Box>
+        </Box>
+      )}
       <AccordionGroup
         size={"sm"}
         transition={{
@@ -487,6 +707,7 @@ export default function GenericTable<T>({
                     xl={10}
                     sx={{ display: "flex", justifyContent: "center", px: 0 }}
                   >
+                    {/* TODO: Optimasi pencarian menggunakan form */}
                     {/* Search Bar */}
                     <Input
                       placeholder={placeholderSearch}
@@ -524,13 +745,10 @@ export default function GenericTable<T>({
           </AccordionDetails>
         </Accordion>
       </AccordionGroup>
-
       {/* n item selected */}
       <Box ml={1}>
         <Typography level="body-md">
-          {selected.length > 0
-            ? `${selected.length} item selected`
-            : ""}
+          {selected.length > 0 ? `${selected.length} item selected` : ""}
         </Typography>
       </Box>
       {/* Tabel */}
@@ -593,6 +811,7 @@ export default function GenericTable<T>({
               </th>
               {columns.map((col) => (
                 <Box
+                  key={(col.key as string) + "-header"}
                   component={"th" as any}
                   sx={{
                     width: col.width || {
@@ -641,7 +860,14 @@ export default function GenericTable<T>({
                   />
                 </td>
                 {columns.map((col) => (
-                  <td key={col.key as string}>{renderCellData(item, col)}</td>
+                  <td
+                    key={col.key as string}
+                    onClick={() => {
+                      onDetail && onDetail(item);
+                    }}
+                  >
+                    {renderCellData(item, col)}
+                  </td>
                 ))}
                 <td>
                   <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
@@ -662,16 +888,19 @@ export default function GenericTable<T>({
             ))}
             {data.length === 0 && (
               /* Placeholder for empty data */
-              <Box>
-                <Typography level="body-md">
-                  No data available yet 😢
-                </Typography>
-              </Box>
+              <tr>
+                <td>
+                  <Box>
+                    <Typography level="body-md">
+                      No data available yet 😢
+                    </Typography>
+                  </Box>
+                </td>
+              </tr>
             )}
           </tbody>
         </Table>
       </Sheet>
-
       {/* Dinamis: Pagination Logic */}
       <PaginationComponent
         page={page}
@@ -682,7 +911,6 @@ export default function GenericTable<T>({
         handleNextPage={handleNextPage}
         handlePrevPage={handlePrevPage}
       />
-
       {/* Add Item Modal */}
       <Modal
         open={openAddModal}
@@ -697,23 +925,25 @@ export default function GenericTable<T>({
               onSubmit={(event: React.FormEvent<HTMLFormElement>) => {
                 event.preventDefault();
                 handleFormAddSubmit(event);
+                event.currentTarget.reset();
               }}
               onReset={() => setNewItem({} as T)} // Tombol reset untuk menghapus input
             >
               <Stack spacing={2}>
-                {columns.map((col) => (
-                  <FormControl key={col.key as string}>
-                    <FormLabel>{col.label}</FormLabel>
-                    {renderInputField(col, options[col.key as string] || [])}
-                  </FormControl>
-                ))}
+                {columns.map((col) =>
+                  col.readonly ? null : (
+                    <FormControl key={col.key as string}>
+                      <FormLabel>{col.label}</FormLabel>
+                      {renderInputField(col, options[col.key as string] || [])}
+                    </FormControl>
+                  )
+                )}
                 <Button type="submit">Submit</Button>
               </Stack>
             </form>
           </ModalDialog>
         </ModalOverflow>
       </Modal>
-
       {/* Edit Modal */}
       <Modal
         open={openEditModal}
@@ -733,7 +963,7 @@ export default function GenericTable<T>({
               <Stack spacing={2}>
                 {columns.map((col) => (
                   <FormControl key={col.key as string}>
-                    <FormLabel>{col.label}</FormLabel>
+                    {/* <FormLabel>{col.label}</FormLabel> */}
                     {/* Pass options for multiple select */}
                     {renderInputField(col, options[col.key as string] || [])}
                   </FormControl>
@@ -744,7 +974,6 @@ export default function GenericTable<T>({
           </ModalDialog>
         </ModalOverflow>
       </Modal>
-
       {/* Delete single item */}
       <Modal
         open={openDeleteItemModal}
@@ -785,7 +1014,6 @@ export default function GenericTable<T>({
           </DialogActions>
         </ModalDialog>
       </Modal>
-
       {/* Delete selected */}
       <Modal
         open={openDeleteItemsModal}
@@ -820,6 +1048,31 @@ export default function GenericTable<T>({
           </DialogActions>
         </ModalDialog>
       </Modal>
+      {/* Snackbar All */}
+      <Snackbar
+        key={snackbarState.key}
+        open={snackbarState.open}
+        anchorOrigin={{
+          vertical: snackbarState.vertical,
+          horizontal: snackbarState.horizontal,
+        }}
+        variant={snackbarState.variant}
+        size={snackbarState.size}
+        color={snackbarState.color}
+        autoHideDuration={snackbarState.autoHideDuration}
+        onClose={handleCloseSnackbar}
+        startDecorator={
+          snackbarState.color === "success" ? (
+            <CheckCircleOutlinedIcon />
+          ) : snackbarState.color === "danger" ? (
+            <DangerousOutlinedIcon />
+          ) : (
+            <WarningAmberOutlinedIcon />
+          )
+        }
+      >
+        {snackbarState.title}
+      </Snackbar>
     </React.Fragment>
   );
 }

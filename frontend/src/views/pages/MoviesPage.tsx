@@ -1,6 +1,6 @@
 import React from "react";
 
-import { Box, Grid, Button, Input, Autocomplete } from "@mui/joy";
+import { Box, Grid, Button, Input, Autocomplete, FormControl } from "@mui/joy";
 import MainLayout from "../layouts/MainLayout";
 import MovieCard from "../components/MovieCard";
 
@@ -234,43 +234,49 @@ export default function MoviesPage() {
           </Grid>
 
           {/* Search & Apply */}
-          <Grid
-            container
-            spacing={{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2 }}
-            sx={{ flexGrow: 1, justifyContent: "left", m: 0 }}
+
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              const formJson = Object.fromEntries((formData as any).entries());
+
+              handleFilterChange("searchTerm", formJson.searchTerm);
+
+              console.info("Form JSON: ", formJson);
+            }}
           >
             <Grid
-              xs={12}
-              sm={12}
-              md={8}
-              lg={10}
-              xl={10}
-              sx={{ display: "flex", justifyContent: "center", pl: 0 }}
+              container
+              spacing={{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2 }}
+              sx={{ flexGrow: 1, justifyContent: "left", m: 0 }}
             >
-              {/* Search Bar */}
-              <Input
-                placeholder={"Search movies..."}
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  handleFilterChange("searchTerm", e.target.value);
-                }}
-                sx={{ width: "100%", mt: 2 }}
-              />
+              <Grid
+                xs={12}
+                sm={12}
+                md={8}
+                lg={10}
+                xl={10}
+                sx={{ display: "flex", justifyContent: "center", pl: 0 }}
+              >
+                <FormControl key={"searchTerm"} sx={{ width: "100%", mt: 2 }}>
+                  <Input name="searchTerm" placeholder={"Search movies..."} />
+                </FormControl>
+              </Grid>
+              <Grid
+                xs={12}
+                sm={12}
+                md={4}
+                lg={2}
+                xl={2}
+                sx={{ display: "flex", justifyContent: "center", pr: 0 }}
+              >
+                <Button type="submit" sx={{ flexGrow: 1, mt: 2 }}>
+                  Search
+                </Button>
+              </Grid>
             </Grid>
-            <Grid
-              xs={12}
-              sm={12}
-              md={4}
-              lg={2}
-              xl={2}
-              sx={{ display: "flex", justifyContent: "center", pr: 0 }}
-            >
-              <Button onClick={handleApplyFilter} sx={{ flexGrow: 1, mt: 2 }}>
-                Apply Filter & Search
-              </Button>
-            </Grid>
-          </Grid>
+          </form>
         </Box>
 
         {/* Movies */}

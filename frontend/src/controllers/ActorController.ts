@@ -1,7 +1,7 @@
-import { BaseController } from './BaseController';
-import { ActorModel, ActorParamsModel } from '../models/ActorModel';
-import { useAuthStore } from '../contexts/authStore'; // Asumsikan ini store untuk mendapatkan data user
-import { BASE_API_URL } from '../configs/constants';
+import { BaseController } from "./BaseController";
+import { ActorModel, ActorParamsModel } from "../models/ActorModel";
+import { useAuthStore } from "../contexts/authStore"; // Asumsikan ini store untuk mendapatkan data user
+import { BASE_API_URL } from "../configs/constants";
 
 class ActorController extends BaseController {
   constructor() {
@@ -11,7 +11,7 @@ class ActorController extends BaseController {
   // Mendapatkan daftar film dengan pagination
   public async getActors(actorParamsModel?: ActorParamsModel | undefined) {
     const params = { ...actorParamsModel };
-    return this.get<ActorModel[]>('/', params);
+    return this.get<ActorModel[]>("/", params);
   }
 
   // Mendapatkan detail film berdasarkan ID
@@ -21,15 +21,19 @@ class ActorController extends BaseController {
 
   // Menambah film baru
   public async addActor(actor: ActorModel) {
-    return this.post<ActorModel>('/', actor);
+    return this.post<ActorModel>("/", actor);
   }
 
   // Mengubah data film, hanya untuk admin
   public async updateActor(id: number, actor: ActorModel) {
     const { user } = useAuthStore.getState();
-    return this.put<ActorModel>(`/${id}`, actor, user!.role!.toString());
+    return this.put<ActorModel>(
+      `/${id}`,
+      { ...actor, id: undefined },
+      user!.role!.toString()
+    );
   }
-  
+
   // Menghapus film berdasarkan ID, hanya untuk admin
   public async deleteActor(id: number) {
     const { user } = useAuthStore.getState();

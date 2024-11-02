@@ -3,10 +3,10 @@ import { CountryModel } from "./CountryModel";
 export interface DirectorModel {
   id: number;
   name: string;
-  birthDate: Date;
+  birthDate: string;
   photoUrl: string;
   countryCode: string;
-  country: CountryModel;
+  country?: CountryModel;
 }
 
 
@@ -25,4 +25,19 @@ export interface DirectorParamsModel {
   country?: string;
   sortBy?: string;
   sortOrder?: string;
+}
+
+
+
+
+export function convertDirectorModelToTable(
+  director: DirectorModel
+): DirectorModelTable {
+  return {
+    id: director.id,
+    name: director.name,
+    birthDate: director.birthDate.toString(),
+    photoUrl: director.photoUrl,
+    country: director.country?.name || '',
+  };
 }

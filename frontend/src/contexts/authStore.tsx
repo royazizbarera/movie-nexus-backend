@@ -38,7 +38,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   resendLoading: false,
   isCheckingAuth: true,
 
-  // TODO: Implement the sign up method
+  // TODO (DONE): Implement the sign up method
   signUpWithEmailAndPassword: async (
     username: string,
     email: string,
@@ -60,7 +60,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 
-  // TODO: Implement the verify email method
+  // TODO (DONE): Implement the verify email method
   verifyEmail: async (verificationCode: string) => {
     set({ isLoading: true });
     try {
@@ -73,7 +73,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 
-  // TODO: Implement the sign in method
+  // TODO (DONE): Implement the sign in method
   signInWithEmailAndPassword: async (email: string, password: string) => {
     set({ isLoading: true });
     try {
@@ -90,7 +90,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 
-  // TODO: Implement the check auth method
+  // TODO (DONE): Implement the check auth method
   checkAuth: async () => {
     set({ isCheckingAuth: true });
     try {
@@ -101,7 +101,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 
-  // TODO: Implement the logout method
+  // TODO (DONE): Implement the logout method
   logout: async () => {
     set({ isLoading: true });
     try {

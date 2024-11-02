@@ -119,7 +119,7 @@ class ActorController {
 
     async createActor(req: Request, res: Response): Promise<Response> {
         try {
-            const actorData = req.query;
+            const actorData = req.body;
 
             const newActor = await actorService.createActor(actorData);
 
@@ -146,7 +146,7 @@ class ActorController {
 
     async updateActorById(req: Request, res: Response): Promise<Response> {
         const actorId = parseInt(req.params.id);
-        const actorData = req.query;
+        const actorData = req.body;
 
         try {
             const updatedActor = await actorService.updateActorById(actorId, actorData);
