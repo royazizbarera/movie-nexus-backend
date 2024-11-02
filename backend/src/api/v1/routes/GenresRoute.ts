@@ -6,6 +6,10 @@ import ResponseApi from "../config/ResponseApi";
 const router = express.Router();
 
 router.get("/", genreController.getGenres);
+router.post("/", genreController.addGenre);
+router.delete("/:id", genreController.deleteGenre);
+router.put("/:id", genreController.updateGenre);
+
 
 router.get("/:id", async (req, res) => {
   (req.params.id);

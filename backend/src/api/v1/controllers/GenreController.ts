@@ -55,6 +55,83 @@ class GenreController {
       throw error;
     }
   }
+
+
+  // nyoba bikin fungsi baru aja, buat ngetest ke frontend add
+  async addGenre(req: Request, res: Response) {
+    try {
+      const genreName = req.body.name;
+      const genre = await genreService.addGenre(genreName);
+      return res.json(
+        ResponseApi({
+          code: HttpStatus.OK,
+          message: "Genre added successfully",
+          data: genre,
+          version: 1.0,
+        })
+      );
+    } catch (error) {
+      return res.json(
+        ResponseApi({
+          code: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: String(error),
+          errors: error,
+          version: 1.0,
+        })
+      );
+    }
+  }
+
+  // delete
+  async deleteGenre(req: Request, res: Response) {
+    try {
+      const genreId = req.params.id;
+      await genreService.deleteGenre(Number(genreId));
+      return res.json(
+        ResponseApi({
+          code: HttpStatus.OK,
+          message: "Genre deleted successfully",
+          data: null,
+          version: 1.0,
+        })
+      );
+    } catch (error) {
+      return res.json(
+        ResponseApi({
+          code: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: String(error),
+          errors: error,
+          version: 1.0,
+        })
+      );
+    }
+  }
+
+  // update
+  async updateGenre(req: Request, res: Response) {
+    try {
+      const genreId = req.params.id;
+      const genreName = req.body.name;
+      const genre = await genreService.updateGenre(Number(genreId), genreName);
+      return res.json(
+        ResponseApi({
+          code: HttpStatus.OK,
+          message: "Genre updated successfully",
+          data: genre,
+          version: 1.0,
+        })
+      );
+    } catch (error) {
+      return res.json(
+        ResponseApi({
+          code: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: String(error),
+          errors: error,
+          version: 1.0,
+        })
+      );
+    }
+  }
 }
 
 const genreController = new GenreController();

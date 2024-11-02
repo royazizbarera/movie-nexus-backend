@@ -122,6 +122,57 @@ async getGenres({
       throw new Error(`Could not fetch genre with ID ${id}`);
     }
   }
+
+  // Metode untuk menambahkan genre baru
+  async addGenre(genreName: string) {
+    try {
+      // Menambahkan genre baru ke database
+      const genre = await prisma.genre.create({
+        data: {
+          name: genreName,
+        },
+      });
+
+      return genre;
+    } catch (error) {
+      throw new Error("Could not add genre");
+    }
+  }
+
+  // Metode untuk menghapus genre
+  async deleteGenre(id: number) {
+    try {
+      // Menghapus genre dari database
+      const genre = await prisma.genre.delete({
+        where: {
+          id: id,
+        },
+      });
+
+      return genre;
+    } catch (error) {
+      throw new Error("Could not delete genre");
+    }
+  }
+
+  // Metode untuk mengubah genre
+  async updateGenre(id: number, genreName: string) {
+    try {
+      // Mengubah genre di database
+      const genre = await prisma.genre.update({
+        where: {
+          id: id,
+        },
+        data: {
+          name: genreName,
+        },
+      });
+
+      return genre;
+    } catch (error) {
+      throw new Error("Could not update genre");
+    }
+  }
 }
 
 const genreService = new GenreService();

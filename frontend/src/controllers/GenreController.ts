@@ -1,7 +1,7 @@
-import { BaseController } from './BaseController';
-import { GenreModel, GenreParamsModel } from '../models/GenreModel';
-import { useAuthStore } from '../contexts/authStore'; // Asumsikan ini store untuk mendapatkan data user
-import { BASE_API_URL } from '../configs/constants';
+import { BaseController } from "./BaseController";
+import { GenreModel, GenreParamsModel } from "../models/GenreModel";
+import { useAuthStore } from "../contexts/authStore"; // Asumsikan ini store untuk mendapatkan data user
+import { BASE_API_URL } from "../configs/constants";
 
 class GenreController extends BaseController {
   constructor() {
@@ -11,7 +11,7 @@ class GenreController extends BaseController {
   // Mendapatkan daftar film dengan pagination
   public async getGenres(genreParamsModel?: GenreParamsModel | undefined) {
     const params = { ...genreParamsModel };
-    return this.get<GenreModel[]>('/', params);
+    return this.get<GenreModel[]>("/", params);
   }
 
   // Mendapatkan detail film berdasarkan ID
@@ -20,16 +20,20 @@ class GenreController extends BaseController {
   }
 
   // Menambah film baru
-  public async addGenre(genre: GenreModel) {
-    return this.post<GenreModel>('/', genre);
+  public async addGenre(name: string) {
+    return this.post<string>("/", { name: name });
   }
 
   // Mengubah data film, hanya untuk admin
-  public async updateGenre(id: number, genre: GenreModel) {
+  public async updateGenre(id: number, newGenreName: string) {
     const { user } = useAuthStore.getState();
-    return this.put<GenreModel>(`/${id}`, genre, user!.role!.toString());
+    return this.put<GenreModel>(
+      `/${id}`,
+      { name: newGenreName },
+      user!.role!.toString()
+    );
   }
-  
+
   // Menghapus film berdasarkan ID, hanya untuk admin
   public async deleteGenre(id: number) {
     const { user } = useAuthStore.getState();

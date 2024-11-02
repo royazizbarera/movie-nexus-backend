@@ -20,7 +20,11 @@ import {
   GenreParamsModel,
 } from "../../../models/GenreModel";
 import { PaginationModel } from "../../../models/PaginationModel";
-import { PAGE_SIZE_DROPDOWN, SORT_ORDER_DROPDOWN } from "../../../configs/constants";
+import {
+  PAGE_SIZE_DROPDOWN,
+  SORT_ORDER_DROPDOWN,
+} from "../../../configs/constants";
+import { HttpStatusCode } from "axios";
 
 function convertGenreModelToTable(genre: GenreModel): GenreModelTable {
   return {
@@ -52,12 +56,11 @@ export default function AdminGenrePage() {
     page: pagination.page,
     pageSize: pagination.pageSize,
   });
-  
+
   React.useEffect(() => {
     fetchGenres(genreParams); // Pass current page to fetchGenres
   }, [genreParams]);
-  
-  
+
   // TODO: Genre CRUD operations
   const fetchGenres = async (genreParamsModel: GenreParamsModel) => {
     try {
@@ -70,32 +73,66 @@ export default function AdminGenrePage() {
       console.error("Error fetching genres:", error);
     }
   };
+
+  // TODO: ADD Genre
+  const handleAddGenre = async (newGenre: GenreModelTable) => {
+    try {
+      const response = await genreController.addGenre(newGenre.name);
+      if (
+        response.code === HttpStatusCode.Created ||
+        response.code === HttpStatusCode.Ok
+      ) {
+        fetchGenres(genreParams);
+        console.log("Genre added successfully:", response.message);
+        console.info("add genre: ", newGenre);
+        return true;
+      } else {
+        console.error("Error adding genre:", response.message);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error adding genre:", error);
+      return false;
+    }
+  };
+
   const handleEditGenre = async (updatedGenre: GenreModelTable) => {
     try {
       // Kirim data yang telah diubah ke endpoint tertentu
       // const response = await axios.put(`http://localhost:3001/genre/${updatedGenre.id}`, updatedGenre);
-        // console.log('Genre updated successfully:', response.data);
-      const response = await genreController.updateGenre(updatedGenre.id, updatedGenre);
+      // console.log('Genre updated successfully:', response.data);
+      const response = await genreController.updateGenre(
+        updatedGenre.id,
+        updatedGenre.name
+      );
+      if (response.code !== HttpStatusCode.Ok) {
+        console.error("Error updating genre:", response.message);
+        return false;
+      }
       fetchGenres(genreParams);
       console.log("Genre updated successfully:", response.message);
       console.info("update genre: ", updatedGenre);
+      return true;
     } catch (error) {
       console.error("Error updating genre:", error);
+      return false;
     }
   };
 
+  // TODO: DELETE Genre
   const handleDeleteGenre = async (genre: GenreModelTable) => {
     try {
       const response = await genreController.deleteGenre(genre.id);
-      setGenres((prevGenres) => prevGenres.filter((m) => m.id !== genre.id));
-      setPagination((prevPagination) => ({
-        ...prevPagination,
-        totalItems: prevPagination.totalItems - 1,
-      }));
-      console.log("Genre deleted successfully:", response.message);
-      console.info("delete genre with id: ", genre.id);
+      if (response.code === HttpStatusCode.Ok) {
+        fetchGenres(genreParams);
+        console.log("Genre deleted successfully:", response.message);
+        console.info("delete genre: ", genre);
+      } else {
+        console.error("Error deleting genre:", response.message);
+      }
     } catch (error) {
       console.error("Error deleting genre:", error);
+      throw new Error("Error deleting genre: " + String(error));
     }
   };
 
@@ -141,6 +178,7 @@ export default function AdminGenrePage() {
             title="Genres"
             data={genres}
             columns={columns}
+            onAdd={handleAddGenre}
             onEdit={handleEditGenre}
             onDelete={handleDeleteGenre}
             onPageChange={handlePageChange}
