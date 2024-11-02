@@ -2,35 +2,51 @@ import prisma from "../config/client";
 import SearchParams from "../helpers/SearchParams";
 
 class CountryService {
+    /**
+     * Counts the number of countries based on the provided where clause and optional country codes.
+     * @param {object} whereClause - The conditions to filter the countries.
+     * @param {any} [countryCodes] - Optional array of country codes to filter.
+     * @returns {Promise<number>} The count of countries.
+     * @throws {Error} If there is an issue counting the countries.
+     */
     async countCountries(whereClause: object, countryCodes?: any): Promise<number> {
         try {
             if (countryCodes) {
                 return prisma.country.count({
                     where: {
-                        code: {in: countryCodes},
+                        code: { in: countryCodes },
                         ...whereClause,
                     },
                 });
             }
-            return prisma.country.count({where: whereClause});
+            return prisma.country.count({ where: whereClause });
         } catch (error) {
             console.error("Error counting countries:", error);
             throw new Error("Could not count countries");
         }
     }
 
+    /**
+     * Retrieves a list of countries based on pagination, search parameters, and filters.
+     * @param {object} options - The options for retrieving countries.
+     * @param {number} [options.page=1] - The page number for pagination.
+     * @param {number} [options.pageSize=24] - The number of items per page.
+     * @param {SearchParams} options.params - The search parameters and filters.
+     * @returns {Promise<any[]>} A promise that resolves to an array containing the countries and total items count.
+     * @throws {Error} If there is an issue fetching the countries.
+     */
     async getCountries({
-                        page = 1,
-                        pageSize = 24,
-                        params,
-                    }: {
+                           page = 1,
+                           pageSize = 24,
+                           params,
+                       }: {
         page: number | undefined;
         pageSize: number | undefined;
         params: SearchParams;
     }): Promise<any[]> {
         const skip = (page - 1) * pageSize;
-        const {searchTerm, sortBy, sortOrder} = params;
-        const whereClause: any = {AND: []};
+        const { searchTerm, sortBy, sortOrder } = params;
+        const whereClause: any = { AND: [] };
 
         if (whereClause.AND.length === 0) {
             delete whereClause.AND;
@@ -53,7 +69,7 @@ class CountryService {
                 const countryCodes = searchResults.map(country => country.code);
                 countries = await prisma.country.findMany({
                     where: {
-                        code: {in: countryCodes},
+                        code: { in: countryCodes },
                         ...whereClause,
                     },
                     skip,
@@ -63,7 +79,7 @@ class CountryService {
             } else {
                 countries = await prisma.country.findMany({
                     where: whereClause,
-                    orderBy: sortBy ? {[sortBy]: sortOrder || "asc"} : undefined,
+                    orderBy: sortBy ? { [sortBy]: sortOrder || "asc" } : undefined,
                     skip,
                     take: pageSize,
                 });
@@ -76,6 +92,12 @@ class CountryService {
         }
     }
 
+    /**
+     * Retrieves a country by its code.
+     * @param {string} code - The code of the country.
+     * @returns {Promise<any>} The country data.
+     * @throws {Error} If there is an issue fetching the country.
+     */
     async getCountryByCode(code: string) {
         try {
             return await prisma.country.findUnique({
@@ -88,23 +110,26 @@ class CountryService {
         }
     }
 
+    /**
+     * Creates a new country.
+     * @param {any} countryData - The data of the country to be created.
+     * @returns {Promise<any>} The newly created country data.
+     * @throws {Error} If there is an issue creating the country.
+     */
     async createCountry(countryData: any): Promise<any> {
         try {
-            const {
-                code,
-                name
-            } = countryData;
+            const { code, name } = countryData;
 
             return await prisma.$transaction(async (prisma) => {
                 const country = await prisma.country.create({
                     data: {
                         code,
-                        name
+                        name,
                     },
                 });
 
                 return prisma.country.findUnique({
-                    where: {code: country.code}
+                    where: { code: country.code },
                 });
             });
         } catch (error) {
@@ -112,15 +137,22 @@ class CountryService {
         }
     }
 
+    /**
+     * Updates a country by its code.
+     * @param {string} code - The code of the country to be updated.
+     * @param {any} updatedData - The updated data of the country.
+     * @returns {Promise<any>} The updated country data.
+     * @throws {Error} If there is an issue updating the country.
+     */
     async updateCountryByCode(code: string, updatedData: any): Promise<any> {
         try {
             const dataToUpdate: any = {
                 ...(updatedData.code ? { code: updatedData.code } : {}),
-                ...(updatedData.name ? { name: updatedData.name } : {})
+                ...(updatedData.name ? { name: updatedData.name } : {}),
             };
 
             return await prisma.country.update({
-                where: {code},
+                where: { code },
                 data: dataToUpdate,
             });
         } catch (error) {
@@ -128,15 +160,21 @@ class CountryService {
         }
     }
 
+    /**
+     * Deletes a country by its code.
+     * @param {string} code - The code of the country to be deleted.
+     * @returns {Promise<{ message: string, deletedCountry: any }>} The result of the delete operation.
+     * @throws {Error} If there is an issue deleting the country.
+     */
     async deleteCountryByCode(code: string): Promise<{ message: string, deletedCountry: any }> {
         try {
             const deletedCountry = await prisma.$transaction(async (prisma) => {
-                return prisma.country.delete({where: {code}});
+                return prisma.country.delete({ where: { code } });
             });
 
             return {
                 message: `Country with Code ${code} deleted successfully`,
-                deletedCountry
+                deletedCountry,
             };
         } catch (error) {
             throw new Error(`Could not delete country with Code ${code}`);

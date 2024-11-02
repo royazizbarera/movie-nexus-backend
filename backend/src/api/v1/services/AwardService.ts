@@ -1,6 +1,6 @@
 import prisma from "../config/client";
 import SearchParams from "../helpers/SearchParams";
-import {addAwardYearFilter, addCountryFilter} from "../helpers/fieldFilter";
+import { addAwardYearFilter, addCountryFilter } from "../helpers/fieldFilter";
 
 class AwardService {
     joinTable = {
@@ -9,23 +9,39 @@ class AwardService {
         },
     };
 
+    /**
+     * Counts the number of awards based on the provided where clause and optional award IDs.
+     * @param {object} whereClause - The conditions to filter the awards.
+     * @param {any} [awardsIds] - Optional array of award IDs to filter.
+     * @returns {Promise<number>} The count of awards.
+     * @throws {Error} If there is an issue counting the awards.
+     */
     async countAwards(whereClause: object, awardsIds?: any): Promise<number> {
         try {
             if (awardsIds) {
                 return prisma.award.count({
                     where: {
-                        id: {in: awardsIds},
+                        id: { in: awardsIds },
                         ...whereClause,
                     },
                 });
             }
-            return prisma.award.count({where: whereClause});
+            return prisma.award.count({ where: whereClause });
         } catch (error) {
             console.error("Error counting awards:", error);
             throw new Error("Could not count awards");
         }
     }
 
+    /**
+     * Retrieves a list of awards based on pagination, search parameters, and filters.
+     * @param {object} options - The options for retrieving awards.
+     * @param {number} [options.page=1] - The page number for pagination.
+     * @param {number} [options.pageSize=24] - The number of items per page.
+     * @param {SearchParams} options.params - The search parameters and filters.
+     * @returns {Promise<any[]>} A promise that resolves to an array containing the awards and total items count.
+     * @throws {Error} If there is an issue fetching the awards.
+     */
     async getAwards({
                         page = 1,
                         pageSize = 24,
@@ -36,8 +52,8 @@ class AwardService {
         params: SearchParams;
     }): Promise<any[]> {
         const skip = (page - 1) * pageSize;
-        const {searchTerm, country, year, sortBy, sortOrder} = params;
-        const whereClause: any = {AND: []};
+        const { searchTerm, country, year, sortBy, sortOrder } = params;
+        const whereClause: any = { AND: [] };
 
         if (country) addCountryFilter(whereClause, country);
         if (year) addAwardYearFilter(whereClause, year);
@@ -63,7 +79,7 @@ class AwardService {
                 const awardsIds = searchResults.map(award => award.id);
                 awards = await prisma.award.findMany({
                     where: {
-                        id: {in: awardsIds},
+                        id: { in: awardsIds },
                         ...whereClause,
                     },
                     include: this.joinTable.include,
@@ -74,7 +90,7 @@ class AwardService {
             } else {
                 awards = await prisma.award.findMany({
                     where: whereClause,
-                    orderBy: sortBy ? {[sortBy]: sortOrder || "asc"} : undefined,
+                    orderBy: sortBy ? { [sortBy]: sortOrder || "asc" } : undefined,
                     include: this.joinTable.include,
                     skip,
                     take: pageSize,
@@ -89,6 +105,12 @@ class AwardService {
         }
     }
 
+    /**
+     * Retrieves an award by its ID.
+     * @param {number} id - The ID of the award.
+     * @returns {Promise<any>} The award data.
+     * @throws {Error} If there is an issue fetching the award.
+     */
     async getAwardById(id: number) {
         try {
             return await prisma.award.findUnique({
@@ -101,6 +123,12 @@ class AwardService {
         }
     }
 
+    /**
+     * Creates a new award.
+     * @param {any} awardData - The data of the award to be created.
+     * @returns {Promise<any>} The newly created award data.
+     * @throws {Error} If there is an issue creating the award.
+     */
     async createAward(awardData: any): Promise<any> {
         try {
             const {
@@ -114,12 +142,12 @@ class AwardService {
                     data: {
                         name,
                         year: new Date(year),
-                        country: {connect: {code: countryCode}}
+                        country: { connect: { code: countryCode } }
                     },
                 });
 
                 return prisma.award.findUnique({
-                    where: {id: award.id},
+                    where: { id: award.id },
                     ...this.joinTable,
                 });
             });
@@ -128,6 +156,13 @@ class AwardService {
         }
     }
 
+    /**
+     * Updates an award by its ID.
+     * @param {number} id - The ID of the award to be updated.
+     * @param {any} updatedData - The updated data of the award.
+     * @returns {Promise<any>} The updated award data.
+     * @throws {Error} If there is an issue updating the award.
+     */
     async updateAwardById(id: number, updatedData: any): Promise<any> {
         try {
             const dataToUpdate: any = {
@@ -137,7 +172,7 @@ class AwardService {
             };
 
             return await prisma.award.update({
-                where: {id},
+                where: { id },
                 data: dataToUpdate,
                 ...this.joinTable,
             });
@@ -146,11 +181,17 @@ class AwardService {
         }
     }
 
+    /**
+     * Deletes an award by its ID.
+     * @param {number} id - The ID of the award to be deleted.
+     * @returns {Promise<{ message: string, deletedAward: any }>} The result of the delete operation.
+     * @throws {Error} If there is an issue deleting the award.
+     */
     async deleteAwardById(id: number): Promise<{ message: string, deletedAward: any }> {
         try {
             const deletedAward = await prisma.$transaction(async (prisma) => {
-                await prisma.movieAwards.deleteMany({where: {awardId: id}});
-                return prisma.award.delete({where: {id}});
+                await prisma.movieAwards.deleteMany({ where: { awardId: id } });
+                return prisma.award.delete({ where: { id } });
             });
 
             return {

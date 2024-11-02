@@ -2,23 +2,39 @@ import prisma from "../config/client";
 import SearchParams from "../helpers/SearchParams";
 
 class GenreService {
+    /**
+     * Counts the number of genres based on the provided where clause and optional genre IDs.
+     * @param {object} whereClause - The conditions to filter the genres.
+     * @param {any} [genresIds] - Optional array of genre IDs to filter.
+     * @returns {Promise<number>} The count of genres.
+     * @throws {Error} If there is an issue counting the genres.
+     */
     async countGenres(whereClause: object, genresIds?: any): Promise<number> {
         try {
             if (genresIds) {
                 return prisma.genre.count({
                     where: {
-                        id: {in: genresIds},
+                        id: { in: genresIds },
                         ...whereClause,
                     },
                 });
             }
-            return prisma.genre.count({where: whereClause});
+            return prisma.genre.count({ where: whereClause });
         } catch (error) {
             console.error("Error counting genres:", error);
             throw new Error("Could not count genres");
         }
     }
 
+    /**
+     * Retrieves a list of genres based on pagination, search parameters, and filters.
+     * @param {object} options - The options for retrieving genres.
+     * @param {number} [options.page=1] - The page number for pagination.
+     * @param {number} [options.pageSize=24] - The number of items per page.
+     * @param {SearchParams} options.params - The search parameters and filters.
+     * @returns {Promise<any[]>} A promise that resolves to an array containing the genres and total items count.
+     * @throws {Error} If there is an issue fetching the genres.
+     */
     async getGenres({
                         page = 1,
                         pageSize = 24,
@@ -29,8 +45,8 @@ class GenreService {
         params: SearchParams;
     }): Promise<any[]> {
         const skip = (page - 1) * pageSize;
-        const {searchTerm, sortBy, sortOrder} = params;
-        const whereClause: any = {AND: []};
+        const { searchTerm, sortBy, sortOrder } = params;
+        const whereClause: any = { AND: [] };
 
         if (whereClause.AND.length === 0) {
             delete whereClause.AND;
@@ -53,7 +69,7 @@ class GenreService {
                 const genresIds = searchResults.map(genre => genre.id);
                 genres = await prisma.genre.findMany({
                     where: {
-                        id: {in: genresIds},
+                        id: { in: genresIds },
                         ...whereClause,
                     },
                     skip,
@@ -63,7 +79,7 @@ class GenreService {
             } else {
                 genres = await prisma.genre.findMany({
                     where: whereClause,
-                    orderBy: sortBy ? {[sortBy]: sortOrder || "asc"} : undefined,
+                    orderBy: sortBy ? { [sortBy]: sortOrder || "asc" } : undefined,
                     skip,
                     take: pageSize,
                 });
@@ -77,6 +93,12 @@ class GenreService {
         }
     }
 
+    /**
+     * Retrieves a genre by its ID.
+     * @param {number} id - The ID of the genre.
+     * @returns {Promise<any>} The genre data.
+     * @throws {Error} If there is an issue fetching the genre.
+     */
     async getGenreById(id: number) {
         try {
             return await prisma.genre.findUnique({
@@ -89,21 +111,25 @@ class GenreService {
         }
     }
 
+    /**
+     * Creates a new genre.
+     * @param {any} genreData - The data of the genre to be created.
+     * @returns {Promise<any>} The newly created genre data.
+     * @throws {Error} If there is an issue creating the genre.
+     */
     async createGenre(genreData: any): Promise<any> {
         try {
-            const {
-                name
-            } = genreData;
+            const { name } = genreData;
 
             return await prisma.$transaction(async (prisma) => {
                 const genre = await prisma.genre.create({
                     data: {
-                        name
+                        name,
                     },
                 });
 
                 return prisma.genre.findUnique({
-                    where: {id: genre.id}
+                    where: { id: genre.id },
                 });
             });
         } catch (error) {
@@ -111,26 +137,39 @@ class GenreService {
         }
     }
 
+    /**
+     * Updates a genre by its ID.
+     * @param {number} id - The ID of the genre to be updated.
+     * @param {any} updatedData - The updated data of the genre.
+     * @returns {Promise<any>} The updated genre data.
+     * @throws {Error} If there is an issue updating the genre.
+     */
     async updateGenreById(id: number, updatedData: any): Promise<any> {
         try {
             const dataToUpdate: any = {
-                ...(updatedData.name ? { name: updatedData.name } : {})
+                ...(updatedData.name ? { name: updatedData.name } : {}),
             };
 
             return await prisma.genre.update({
-                where: {id},
-                data: dataToUpdate
+                where: { id },
+                data: dataToUpdate,
             });
         } catch (error) {
             throw new Error(`Could not update genre with ID ${id}`);
         }
     }
 
+    /**
+     * Deletes a genre by its ID.
+     * @param {number} id - The ID of the genre to be deleted.
+     * @returns {Promise<{ message: string, deletedGenre: any }>} The result of the delete operation.
+     * @throws {Error} If there is an issue deleting the genre.
+     */
     async deleteGenreById(id: number): Promise<{ message: string, deletedGenre: any }> {
         try {
             const deletedGenre = await prisma.$transaction(async (prisma) => {
-                await prisma.movieGenres.deleteMany({where: {genreId: id}});
-                return prisma.genre.delete({where: {id}});
+                await prisma.movieGenres.deleteMany({ where: { genreId: id } });
+                return prisma.genre.delete({ where: { id } });
             });
 
             return {

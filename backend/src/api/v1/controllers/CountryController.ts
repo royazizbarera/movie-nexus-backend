@@ -1,10 +1,18 @@
 import countryService from "../services/CountryService";
 import HttpStatus from "../config/constants/HttpStatus";
 import ResponseApi from "../config/ResponseApi";
-import {Response, Request} from "express";
+import { Response, Request } from "express";
 
 class CountryController {
-    async getCountries(req: Request, res: Response) {
+    /**
+     * Retrieves a list of countries based on pagination, search parameters, and filters.
+     *
+     * @param {Request} req - The Express request object containing query parameters.
+     * @param {Response} res - The Express response object to send back the result.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the countries data and pagination info.
+     * @throws {Error} If there is an issue fetching the countries, an error message will be returned.
+     */
+    async getCountries(req: Request, res: Response): Promise<Response> {
         try {
             const parsedPage = parseInt(req.query.page as string) || 1;
             const parsedPageSize = parseInt(req.query.pageSize as string) || 24;
@@ -52,7 +60,15 @@ class CountryController {
         }
     }
 
-    async getCountryByCode(req: Request, res: Response) {
+    /**
+     * Retrieves a single country by its code.
+     *
+     * @param {Request} req - The Express request object containing the country code in the route parameters.
+     * @param {Response} res - The Express response object to send back the result.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the country's data.
+     * @throws {Error} If the country cannot be found or there is an issue retrieving the country, an error will be thrown.
+     */
+    async getCountryByCode(req: Request, res: Response): Promise<Response> {
         try {
             const countryCode = req.params.code;
 
@@ -99,7 +115,15 @@ class CountryController {
         }
     }
 
-    async createCountry(req: Request, res: Response) {
+    /**
+     * Creates a new country.
+     *
+     * @param {Request} req - The Express request object containing the country data in the body.
+     * @param {Response} res - The Express response object to send back the result.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the newly created country's data.
+     * @throws {Error} If there is an issue creating the country, an error message will be returned.
+     */
+    async createCountry(req: Request, res: Response): Promise<Response> {
         try {
             const countryData = req.query;
 
@@ -126,6 +150,14 @@ class CountryController {
         }
     }
 
+    /**
+     * Updates an existing country by its code.
+     *
+     * @param {Request} req - The Express request object containing the country code in the route parameters and updated data in the body.
+     * @param {Response} res - The Express response object to send back the result.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the updated country's data.
+     * @throws {Error} If there is an issue updating the country, an error message will be returned.
+     */
     async updateCountryByCode(req: Request, res: Response): Promise<Response> {
         const countryCode = req.params.code;
         const countryData = req.query;
@@ -150,6 +182,14 @@ class CountryController {
         }
     }
 
+    /**
+     * Deletes a country by its code.
+     *
+     * @param {Request} req - The Express request object containing the country code in the route parameters.
+     * @param {Response} res - The Express response object to send back the result.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response indicating the result of the delete operation.
+     * @throws {Error} If there is an issue deleting the country, an error message will be returned.
+     */
     async deleteCountryByCode(req: Request, res: Response): Promise<Response> {
         const countryCode = req.params.code;
 

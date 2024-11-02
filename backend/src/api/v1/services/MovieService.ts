@@ -39,8 +39,8 @@ class MovieService {
 
     /**
      * Refactors the movie object to sort and map genres, actors, and awards.
-     * @param movies - The array of movies to refactor.
-     * @returns An array of refactored movies.
+     * @param {any[]} movies - The array of movies to refactor.
+     * @returns {any[]} An array of refactored movies.
      */
     refactorMovies(movies: any[]): any[] {
         return movies
@@ -55,9 +55,9 @@ class MovieService {
 
     /**
      * Maps and sorts an array of objects based on a specified property.
-     * @param items - The array of items to process.
-     * @param property - The property to extract from each item.
-     * @returns A sorted array of the specified property.
+     * @param {any[]} items - The array of items to process.
+     * @param {string} property - The property to extract from each item.
+     * @returns {any[]} A sorted array of the specified property.
      */
     private sortAndMap(items: any[], property: string): any[] {
         return items
@@ -67,8 +67,8 @@ class MovieService {
 
     /**
      * Counts the total number of movies in the database.
-     * @param whereClause - The where clause to filter the movies.
-     * @param movieIds - The IDs of the movies to count.
+     * @param {object} whereClause - The where clause to filter the movies.
+     * @param {any} [movieIds] - The IDs of the movies to count.
      * @returns {Promise<number>} A promise that resolves to the total count of movies.
      * @throws {Error} Throws an error if the count operation fails.
      */
@@ -77,12 +77,12 @@ class MovieService {
             if (movieIds) {
                 return prisma.movie.count({
                     where: {
-                        id: {in: movieIds},
+                        id: { in: movieIds },
                         ...whereClause,
                     },
                 });
             }
-            return prisma.movie.count({where: whereClause});
+            return prisma.movie.count({ where: whereClause });
         } catch (error) {
             console.error("Error counting movies:", error);
             throw new Error("Could not count movies");
@@ -92,10 +92,7 @@ class MovieService {
     /**
      * Creates a new movie record in the database along with its related data
      * (country, director, genres, actors, and awards) within a transaction.
-     *
-     * @param {any} movieData - The data for the new movie, including title, synopsis, poster URL,
-     *                           release date, approval status, rating, backdrop URL, video URL,
-     *                           country code, director ID, genres, actors, and awards.
+     * @param {any} movieData - The data for the new movie.
      * @returns {Promise<any>} A promise that resolves to the newly created movie object.
      * @throws {Error} Throws an error if the movie creation fails.
      */
@@ -128,22 +125,22 @@ class MovieService {
                         rating: parseFloat(rating),
                         backdropUrl,
                         videoUrl,
-                        country: {connect: {code: countryCode}},
-                        director: {connect: {id: parseInt(directorId)}},
+                        country: { connect: { code: countryCode } },
+                        director: { connect: { id: parseInt(directorId) } },
                         genres: {
-                            create: genres.map((id: any) => ({connect: {id: parseInt(id)}})),
+                            create: genres.map((id: any) => ({ connect: { id: parseInt(id) } })),
                         },
                         actors: {
-                            create: actors.map((id: any) => ({actor: {connect: {id: parseInt(id)}}})),
+                            create: actors.map((id: any) => ({ actor: { connect: { id: parseInt(id) } } })),
                         },
                         awards: {
-                            create: awards.map((id: any) => ({award: {connect: {id: parseInt(id)}}})),
+                            create: awards.map((id: any) => ({ award: { connect: { id: parseInt(id) } } })),
                         },
                     },
                 });
 
                 return prisma.movie.findUnique({
-                    where: {id: movie.id},
+                    where: { id: movie.id },
                     ...this.joinTable,
                 });
             });
@@ -157,7 +154,6 @@ class MovieService {
 
     /**
      * Retrieves a movie by its ID from the database, along with its related data.
-     *
      * @param {number} id - The ID of the movie to retrieve.
      * @returns {Promise<any>} A promise that resolves to the movie object.
      * @throws {Error} Throws an error if the movie is not found or if the fetch fails.
@@ -165,7 +161,7 @@ class MovieService {
     async getMovieById(id: number): Promise<any> {
         try {
             const movie = await prisma.movie.findUnique({
-                where: {id},
+                where: { id },
                 ...this.joinTable,
             });
 
@@ -177,29 +173,29 @@ class MovieService {
 
     /**
      * Updates a movie by its ID with the provided updated data.
-     *
      * @param {number} id - The ID of the movie to update.
      * @param {any} updatedData - The data to update the movie with.
      * @returns {Promise<any>} A promise that resolves to the updated movie object.
+     * @throws {Error} Throws an error if the update operation fails.
      */
     async updateMovieById(id: number, updatedData: any): Promise<any> {
         try {
             const dataToUpdate: any = {
-                ...(updatedData.title ? {title: updatedData.title} : {}),
-                ...(updatedData.synopsis ? {synopsis: updatedData.synopsis} : {}),
-                ...(updatedData.posterUrl ? {posterUrl: updatedData.posterUrl} : {}),
-                ...(updatedData.releaseDate ? {releaseDate: new Date(updatedData.releaseDate)} : {}),
-                ...(updatedData.approvalStatus ? {approvalStatus: updatedData.approvalStatus} : {}),
-                ...(updatedData.rating !== undefined ? {rating: updatedData.rating} : {}),
-                ...(updatedData.countryCode ? {country: {connect: {code: updatedData.countryCode}}} : {}),
-                ...(updatedData.directorId ? {director: {connect: {id: updatedData.directorId}}} : {}),
-                ...(updatedData.genres ? {genres: this.updateRelations(updatedData.genres)} : {}),
-                ...(updatedData.actors ? {actors: this.updateRelations(updatedData.actors)} : {}),
-                ...(updatedData.awards ? {awards: this.updateRelations(updatedData.awards)} : {}),
+                ...(updatedData.title ? { title: updatedData.title } : {}),
+                ...(updatedData.synopsis ? { synopsis: updatedData.synopsis } : {}),
+                ...(updatedData.posterUrl ? { posterUrl: updatedData.posterUrl } : {}),
+                ...(updatedData.releaseDate ? { releaseDate: new Date(updatedData.releaseDate) } : {}),
+                ...(updatedData.approvalStatus ? { approvalStatus: updatedData.approvalStatus } : {}),
+                ...(updatedData.rating !== undefined ? { rating: updatedData.rating } : {}),
+                ...(updatedData.countryCode ? { country: { connect: { code: updatedData.countryCode } } } : {}),
+                ...(updatedData.directorId ? { director: { connect: { id: updatedData.directorId } } } : {}),
+                ...(updatedData.genres ? { genres: this.updateRelations(updatedData.genres) } : {}),
+                ...(updatedData.actors ? { actors: this.updateRelations(updatedData.actors) } : {}),
+                ...(updatedData.awards ? { awards: this.updateRelations(updatedData.awards) } : {}),
             };
 
             const updatedMovie = await prisma.movie.update({
-                where: {id},
+                where: { id },
                 data: dataToUpdate,
                 ...this.joinTable,
             });
@@ -213,35 +209,34 @@ class MovieService {
 
     /**
      * Prepares the relation update data for genres, actors, or awards.
-     *
      * @param {Array<{ id: number }>} relations - The relations to update.
-     * @returns {Object} The prepared data for the Prisma update operation.
+     * @returns {object} The prepared data for the Prisma update operation.
      */
     private updateRelations(relations: Array<{ id: number }>): object {
         return relations.length > 0
             ? {
                 deleteMany: {},
-                connect: relations.map(({id}) => ({id})),
+                connect: relations.map(({ id }) => ({ id })),
             }
-            : {deleteMany: {}};
+            : { deleteMany: {} };
     }
 
     /**
      * Deletes a movie by its ID along with its associated actors, genres, and awards.
-     *
      * @param {number} id - The ID of the movie to delete.
      * @returns {Promise<{ message: string, deletedMovie: any }>} A promise that resolves to a message and the deleted movie object.
+     * @throws {Error} Throws an error if the delete operation fails.
      */
     async deleteMovieById(id: number): Promise<{ message: string, deletedMovie: any }> {
         try {
             const deletedMovie = await prisma.$transaction(async (prisma) => {
                 await Promise.all([
-                    prisma.movieActors.deleteMany({where: {movieId: id}}),
-                    prisma.movieGenres.deleteMany({where: {movieId: id}}),
-                    prisma.movieAwards.deleteMany({where: {movieId: id}}),
+                    prisma.movieActors.deleteMany({ where: { movieId: id } }),
+                    prisma.movieGenres.deleteMany({ where: { movieId: id } }),
+                    prisma.movieAwards.deleteMany({ where: { movieId: id } }),
                 ]);
 
-                return prisma.movie.delete({where: {id}});
+                return prisma.movie.delete({ where: { id } });
             });
 
             return {
@@ -256,12 +251,12 @@ class MovieService {
 
     /**
      * Retrieves a list of movies based on pagination, search parameters, and filters.
-     *
      * @param {Object} options - The options for fetching movies.
      * @param {number} options.page - The current page number.
      * @param {number} options.pageSize - The number of movies per page.
      * @param {SearchParams} options.params - The search parameters including filters, search term, and sorting.
      * @returns {Promise<any[]>} A promise that resolves to a list of movies and the total count of movies.
+     * @throws {Error} Throws an error if the fetch operation fails.
      */
     async getMovies({
                         page = 1,
@@ -273,9 +268,8 @@ class MovieService {
         params: SearchParams;
     }): Promise<any[]> {
         const skip = (page - 1) * pageSize;
-        const {searchTerm, sortBy, sortOrder, genre, country, actor, year, award, director} = params;
-        const whereClause: any = {AND: []};
-
+        const { searchTerm, sortBy, sortOrder, genre, country, actor, year, award, director } = params;
+        const whereClause: any = { AND: [] };
 
         if (genre) addGenreFilter(whereClause, genre);
         if (country) addCountryFilter(whereClause, country);
@@ -305,7 +299,7 @@ class MovieService {
                 const movieIds = searchResults.map(movie => movie.id);
                 movies = await prisma.movie.findMany({
                     where: {
-                        id: {in: movieIds},
+                        id: { in: movieIds },
                         ...whereClause,
                     },
                     include: this.joinTable.include,
@@ -316,7 +310,7 @@ class MovieService {
             } else {
                 movies = await prisma.movie.findMany({
                     where: whereClause,
-                    orderBy: sortBy ? {[sortBy]: sortOrder || "asc"} : undefined,
+                    orderBy: sortBy ? { [sortBy]: sortOrder || "asc" } : undefined,
                     include: this.joinTable.include,
                     skip,
                     take: pageSize,

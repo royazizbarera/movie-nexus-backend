@@ -4,6 +4,8 @@ import { verifyToken } from "../middlewares/verifyToken";
 
 const router = express.Router();
 
+router.get("/", genreController.getGenres);
+
 router.get("/:id", genreController.getGenreById);
 
 router.post("/", verifyToken, genreController.createGenre);
