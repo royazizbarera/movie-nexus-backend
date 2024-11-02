@@ -11,7 +11,7 @@ class MovieController {
      * @returns A JSON response with the status of movie creation.
      */
     async createMovie(req: Request, res: Response): Promise<Response> {
-        const movieData = req.body;
+        const movieData = req.query;
 
         try {
             const newMovie = await movieService.createMovie(movieData);
@@ -74,25 +74,22 @@ class MovieController {
         }
 
         try {
-            const [movies, totalItems] = await Promise.all([
-                movieService.getMovies({
-                    page: parsedPage,
-                    pageSize: parsedPageSize,
-                    params: {
-                        searchTerm: searchTerm as string,
-                        country: country as string,
-                        actor: actor as string,
-                        year: parseInt(year as string),
-                        award: award as string,
-                        director: director as string,
-                        sortBy: sortBy as string,
-                        sortOrder: parsedSortOrder,
-                        filters: parsedFilters,
-                        genre: genre as string,
-                    },
-                }),
-                movieService.countMovies(),
-            ]);
+            const [movies, totalItems] = await movieService.getMovies({
+                page: parsedPage,
+                pageSize: parsedPageSize,
+                params: {
+                    searchTerm: searchTerm as string,
+                    country: country as string,
+                    actor: actor as string,
+                    year: parseInt(year as string),
+                    award: award as string,
+                    director: director as string,
+                    sortBy: sortBy as string,
+                    sortOrder: parsedSortOrder,
+                    filters: parsedFilters,
+                    genre: genre as string,
+                }
+            });
 
             return res.json(
                 ResponseApi({
@@ -106,7 +103,7 @@ class MovieController {
                         totalItems,
                         totalPages: Math.ceil(totalItems / parsedPageSize),
                     },
-                })
+                }),
             );
         } catch (error) {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
@@ -159,7 +156,7 @@ class MovieController {
      */
     async updateMovieById(req: Request, res: Response): Promise<Response> {
         const movieId = parseInt(req.params.id);
-        const movieData = req.body;
+        const movieData = req.query;
 
         try {
             const updatedMovie = await movieService.updateMovieById(movieId, movieData);

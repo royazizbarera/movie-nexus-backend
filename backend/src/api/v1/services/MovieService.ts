@@ -59,12 +59,22 @@ class MovieService {
 
     /**
      * Counts the total number of movies in the database.
+     * @param whereClause - The where clause to filter the movies.
+     * @param movieIds - The IDs of the movies to count.
      * @returns {Promise<number>} A promise that resolves to the total count of movies.
      * @throws {Error} Throws an error if the count operation fails.
      */
-    async countMovies(): Promise<number> {
+    async countMovies(whereClause: object, movieIds?: any): Promise<number> {
         try {
-            return await prisma.movie.count();
+            if (movieIds) {
+                return prisma.movie.count({
+                    where: {
+                        id: {in: movieIds},
+                        ...whereClause,
+                    },
+                });
+            }
+            return prisma.movie.count({where: whereClause});
         } catch (error) {
             console.error("Error counting movies:", error);
             throw new Error("Could not count movies");
@@ -106,20 +116,20 @@ class MovieService {
                         synopsis,
                         posterUrl,
                         releaseDate: new Date(releaseDate),
-                        approvalStatus,
-                        rating,
+                        approvalStatus: Boolean(approvalStatus),
+                        rating: parseFloat(rating),
                         backdropUrl,
                         videoUrl,
                         country: {connect: {code: countryCode}},
-                        director: {connect: {id: directorId}},
+                        director: {connect: {id: parseInt(directorId)}},
                         genres: {
-                            create: genres.map((id: number) => ({genre: {connect: {id}}})),
+                            create: genres.map((id: any) => ({genre: {connect: {id: parseInt(id)}}})),
                         },
                         actors: {
-                            create: actors.map((id: number) => ({actor: {connect: {id}}})),
+                            create: actors.map((id: any) => ({actor: {connect: {id: parseInt(id)}}})),
                         },
                         awards: {
-                            create: awards.map((id: number) => ({award: {connect: {id}}})),
+                            create: awards.map((id: any) => ({award: {connect: {id: parseInt(id)}}})),
                         },
                     },
                 });
@@ -166,21 +176,29 @@ class MovieService {
      */
     async updateMovieById(id: number, updatedData: any): Promise<any> {
         try {
+            const existingMovie = await prisma.movie.findUnique({ where: { id } });
+
+            if (!existingMovie) {
+                throw new Error(`Movie with ID ${id} not found.`);
+            }
+
+            const dataToUpdate: any = {
+                ...(updatedData.title ? { title: updatedData.title } : {}),
+                ...(updatedData.synopsis ? { synopsis: updatedData.synopsis } : {}),
+                ...(updatedData.posterUrl ? { posterUrl: updatedData.posterUrl } : {}),
+                ...(updatedData.releaseDate ? { releaseDate: updatedData.releaseDate } : {}),
+                ...(updatedData.approvalStatus ? { approvalStatus: updatedData.approvalStatus } : {}),
+                ...(updatedData.rating !== undefined ? { rating: updatedData.rating } : {}),
+                ...(updatedData.countryCode ? { country: { connect: { code: updatedData.countryCode } } } : {}),
+                ...(updatedData.directorId ? { director: { connect: { id: updatedData.directorId } } } : {}),
+                ...(updatedData.genres ? { genres: this.updateRelations(updatedData.genres) } : {}),
+                ...(updatedData.actors ? { actors: this.updateRelations(updatedData.actors) } : {}),
+                ...(updatedData.awards ? { awards: this.updateRelations(updatedData.awards) } : {}),
+            };
+
             const updatedMovie = await prisma.movie.update({
-                where: {id},
-                data: {
-                    title: updatedData.title,
-                    synopsis: updatedData.synopsis,
-                    posterUrl: updatedData.posterUrl,
-                    releaseDate: updatedData.releaseDate,
-                    approvalStatus: updatedData.approvalStatus,
-                    rating: updatedData.rating,
-                    country: {connect: {code: updatedData.countryCode}},
-                    director: {connect: {id: updatedData.directorId}},
-                    genres: this.updateRelations(updatedData.genres),
-                    actors: this.updateRelations(updatedData.actors),
-                    awards: this.updateRelations(updatedData.awards),
-                },
+                where: { id },
+                data: dataToUpdate,
                 ...this.joinTable,
             });
 
@@ -198,12 +216,12 @@ class MovieService {
      * @returns {Object} The prepared data for the Prisma update operation.
      */
     private updateRelations(relations: Array<{ id: number }>): object {
-        return {
-            deleteMany: {},
-            create: relations.map(({id}) => ({
-                connect: {id},
-            })),
-        };
+        return relations.length > 0
+            ? {
+                deleteMany: {},
+                connect: relations.map(({ id }) => ({ id })),
+            }
+            : { deleteMany: {} };
     }
 
     /**
@@ -241,7 +259,7 @@ class MovieService {
      * @param {number} options.page - The current page number.
      * @param {number} options.pageSize - The number of movies per page.
      * @param {SearchParams} options.params - The search parameters including filters, search term, and sorting.
-     * @returns {Promise<any[]>} A promise that resolves to a list of movies.
+     * @returns {Promise<any[]>} A promise that resolves to a list of movies and the total count of movies.
      */
     async getMovies({
                         page = 1,
@@ -253,8 +271,8 @@ class MovieService {
         params: SearchParams;
     }): Promise<any[]> {
         const skip = (page - 1) * pageSize;
-        const { filters, searchTerm, sortBy, sortOrder, genre, country, actor, year, award, director } = params;
-        const whereClause: any = { AND: [] };
+        const {searchTerm, sortBy, sortOrder, genre, country, actor, year, award, director} = params;
+        const whereClause: any = {AND: []};
 
         const addGenreFilter = (genre: string) => {
             whereClause.AND.push({
@@ -333,53 +351,19 @@ class MovieService {
             });
         }
 
-        if (filters) {
-            filters.forEach(({ columnKey, operator, value }) => {
-                const condition: any = { [columnKey]: {} };
-                switch (operator) {
-                    case "eq":
-                        condition[columnKey].equals = value;
-                        break;
-                    case "neq":
-                        condition[columnKey].not = value;
-                        break;
-                    case "gt":
-                        condition[columnKey].gt = parseFloat(value);
-                        break;
-                    case "lt":
-                        condition[columnKey].lt = parseFloat(value);
-                        break;
-                    case "gte":
-                        condition[columnKey].gte = parseFloat(value);
-                        break;
-                    case "lte":
-                        condition[columnKey].lte = parseFloat(value);
-                        break;
-                    case "contains":
-                        condition[columnKey].contains = value;
-                        break;
-                    case "startsWith":
-                        condition[columnKey].startsWith = value;
-                        break;
-                    case "endsWith":
-                        condition[columnKey].endsWith = value;
-                        break;
-                }
-                whereClause.AND.push(condition);
-            });
-        }
-
         if (whereClause.AND.length === 0) {
             delete whereClause.AND;
         }
 
         try {
             let movies;
+            let totalItems;
+
             if (searchTerm) {
                 const searchQuery = `
                 SELECT id
                 FROM "Movie"
-                WHERE SIMILARITY("title", $1) > 0.1 OR SIMILARITY("synopsis", $1) > 0.1
+                WHERE SIMILARITY("title", $1) > 0.01 OR SIMILARITY("synopsis", $1) > 0.01
                 ORDER BY SIMILARITY("title", $1) DESC
                 LIMIT $2 OFFSET $3;
             `;
@@ -388,24 +372,26 @@ class MovieService {
                 const movieIds = searchResults.map(movie => movie.id);
                 movies = await prisma.movie.findMany({
                     where: {
-                        id: { in: movieIds },
+                        id: {in: movieIds},
                         ...whereClause,
                     },
                     include: this.joinTable.include,
                     skip,
                     take: pageSize,
                 });
+                totalItems = await this.countMovies(whereClause, movieIds);
             } else {
                 movies = await prisma.movie.findMany({
                     where: whereClause,
-                    orderBy: sortBy ? { [sortBy]: sortOrder || "asc" } : undefined,
+                    orderBy: sortBy ? {[sortBy]: sortOrder || "asc"} : undefined,
                     include: this.joinTable.include,
                     skip,
                     take: pageSize,
                 });
+                totalItems = await this.countMovies(whereClause);
             }
 
-            return movies;
+            return [movies, totalItems];
         } catch (error) {
             console.error("Failed to fetch movies: ", error);
             throw new Error("Error fetching movies");
