@@ -15,26 +15,23 @@ import { AdminTableLayout } from "../layouts/AdminTableLayout";
 import GenericTable from "../components/GenericTable";
 import countryController from "../../../controllers/CountryController";
 import {
+  convertCountryModelToTable,
+  convertCountryTableToModel,
   CountryModel,
   CountryModelTable,
   CountryParamsModel,
 } from "../../../models/CountryModel";
 import { PaginationModel } from "../../../models/PaginationModel";
-import { PAGE_SIZE_DROPDOWN, SORT_ORDER_DROPDOWN } from "../../../configs/constants";
-
-function convertCountryModelToTable(country: CountryModel): CountryModelTable {
-  return {
-    code: country.code,
-    name: country.name,
-  };
-}
+import {
+  PAGE_SIZE_DROPDOWN,
+  SORT_ORDER_DROPDOWN,
+} from "../../../configs/constants";
 
 const columns: any[] = [
   {
     key: "code",
     label: "Code",
-    type: "number",
-    readonly: true,
+    type: "string",
     width: 70,
   },
   { key: "name", label: "Country", type: "string", width: "100%" },
@@ -69,31 +66,59 @@ export default function AdminCountryPage() {
     fetchCountries(countryParams); // Pass current countryParams to fetchCountries
   }, [countryParams]);
 
-  const handleEditCountry = async (updatedCountry: CountryModelTable) => {
+  // TODO: ADD country
+  const handleAddCountry = async (newCountry: CountryModelTable) => {
     try {
-      // Kirim data yang telah diubah ke endpoint tertentu
-      // const response = await axios.put(`http://localhost:3001/country/${updatedCountry.id}`, updatedCountry);
-      // console.log('Country updated successfully:', response.data);
-      console.info("update country: ", updatedCountry);
+      const parsedCountry: CountryModel = {
+        code: newCountry.code,
+        name: newCountry.name,
+      };
+      const response = await countryController.addCountry(parsedCountry);
+      fetchCountries(countryParams);
+      if (response.code !== 201) {
+        console.error("Error adding country:", response.message);
+        return false;
+      }
+      console.log("Country added successfully:", response.message);
+      console.info("add country: ", newCountry);
+      return true;
     } catch (error) {
-      console.error("Error updating country:", error);
+      console.error("Error adding country:", error);
+      return false;
     }
   };
 
+  // TODO: UPDATE country
+  const handleEditCountry = async (updatedCountry: CountryModelTable) => {
+    try {
+      const response = await countryController.updateCountry(
+        updatedCountry.code,
+        convertCountryTableToModel(updatedCountry)
+      );
+      fetchCountries(countryParams);
+      if(response.code !== 200) {
+        return false;
+      }
+      console.info("update country: ", updatedCountry);
+      return true;
+    } catch (error) {
+      console.error("Error updating country:", error);
+      return false;
+    }
+  };
+
+  // TODO: DELETE country
   const handleDeleteCountry = async (country: CountryModelTable) => {
     try {
       const response = await countryController.deleteCountry(country.code);
-      setCountries((prevCountries) =>
-        prevCountries.filter((m) => m.code !== country.code)
-      );
-      setPagination((prevPagination) => ({
-        ...prevPagination,
-        totalItems: prevPagination.totalItems - 1,
-      }));
+      fetchCountries(countryParams);
+      if(response.code !== 200) return false;
       console.log("Country deleted successfully:", response.message);
       console.info("delete country with code: ", country.code);
+      return true;
     } catch (error) {
       console.error("Error deleting country:", error);
+      return false;
     }
   };
 
@@ -136,8 +161,10 @@ export default function AdminCountryPage() {
           <GenericTable<CountryModelTable>
             simpleAddItem
             title="Countries"
+            titleSolo="Country"
             data={countries}
             columns={columns}
+            onAdd={handleAddCountry}
             onEdit={handleEditCountry}
             onDelete={handleDeleteCountry}
             onPageChange={handlePageChange}

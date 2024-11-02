@@ -18,20 +18,15 @@ import {
   ActorModel,
   ActorModelTable,
   ActorParamsModel,
+  convertActorModelToTable,
 } from "../../../models/ActorModel";
 import countryController from "../../../controllers/CountryController";
 import { PaginationModel } from "../../../models/PaginationModel";
-import { PAGE_SIZE_DROPDOWN, SORT_ORDER_DROPDOWN } from "../../../configs/constants";
-
-function convertActorModelToTable(actor: ActorModel): ActorModelTable {
-  return {
-    id: actor.id,
-    name: actor.name,
-    birthDate: actor.birthDate.toString(),
-    photoUrl: actor.photoUrl,
-    country: actor.country.name,
-  };
-}
+import {
+  PAGE_SIZE_DROPDOWN,
+  SORT_ORDER_DROPDOWN,
+} from "../../../configs/constants";
+import { CountryModel } from "../../../models/CountryModel";
 
 const columns: Column<ActorModelTable>[] = [
   {
@@ -45,7 +40,7 @@ const columns: Column<ActorModelTable>[] = [
   { key: "birthDate", label: "Birth Date", type: "date" },
   { key: "photoUrl", label: "Photo Url", type: "string" },
   { key: "country", label: "Country", type: "string_autocomplete" },
-]
+];
 
 export default function AdminActorPage() {
   const [actors, setActors] = React.useState<ActorModelTable[]>([]);
@@ -61,6 +56,7 @@ export default function AdminActorPage() {
   });
 
   const [countries, setCountries] = React.useState<string[]>([]);
+  const [realCountries, setRealCountries] = React.useState<CountryModel[]>([]);
 
   const fetchActors = async (actorParamsModel?: ActorParamsModel) => {
     try {
@@ -79,6 +75,7 @@ export default function AdminActorPage() {
       const response = await countryController.getCountries();
       const data = response.data;
       setCountries(data.map((country) => country.name));
+      setRealCountries(data);
     } catch (error) {
       console.error("Error fetching countrys:", error);
     }
@@ -92,29 +89,72 @@ export default function AdminActorPage() {
     fetchActors(actorParams); // Pass current actorParamsModel to fetchActors
   }, [actorParams]);
 
-  const handleEditActor = async (updatedActor: ActorModelTable) => {
+  // TODO (DONE): Implement add actor
+  const handleAddActor = async (newActor: ActorModelTable) => {
     try {
-      // Kirim data yang telah diubah ke endpoint tertentu
-      // const response = await axios.put(`http://localhost:3001/actor/${updatedActor.id}`, updatedActor);
-      // console.log('Actor updated successfully:', response.data);
-      console.info("update actor: ", updatedActor);
+      const parsedActor: ActorModel = {
+        id: newActor.id,
+        name: newActor.name,
+        birthDate: newActor.birthDate,
+        photoUrl: newActor.photoUrl,
+        countryCode:
+          realCountries.find((c) => c.name === newActor.country)?.code || "",
+      };
+      const response = await actorController.addActor(parsedActor);
+      console.info("add actor: ", parsedActor);
+      fetchActors(actorParams);
+      if(response.code !== 201) {
+        return false;
+      }
+      return true;
     } catch (error) {
-      console.error("Error updating actor:", error);
+      console.error("Error adding actor:", error);
+      return false;
     }
   };
 
+
+  // TODO (DONE): Implement edit actor
+  const handleEditActor = async (updatedActor: ActorModelTable) => {
+    try {
+      const parsedActor: ActorModel = {
+        id: updatedActor.id,
+        name: updatedActor.name,
+        birthDate: new Date(updatedActor.birthDate).toISOString(),
+        photoUrl: updatedActor.photoUrl,
+        countryCode:
+          realCountries.find((c) => c.name === updatedActor.country)?.code || "",
+      };
+      const response = await actorController.updateActor(
+        updatedActor.id,
+        parsedActor
+      );
+      fetchActors(actorParams);
+      if (response.code !== 200) {
+        return false;
+      }
+      console.info("edit actor: ", parsedActor);
+      return true;
+    } catch (error) {
+      console.error("Error updating actor:", error);
+      return false;
+    }
+  };
+
+  // TODO (DONE): Implement delete actor
   const handleDeleteActor = async (actor: ActorModelTable) => {
     try {
       const response = await actorController.deleteActor(actor.id);
-      setActors((prevActors) => prevActors.filter((m) => m.id !== actor.id));
-      setPagination((prevPagination) => ({
-        ...prevPagination,
-        totalItems: prevPagination.totalItems - 1,
-      }));
+      fetchActors(actorParams);
+      if (response.code !== 200) {
+        return false;
+      }
       console.log("Actor deleted successfully:", response.message);
       console.info("delete actor with id: ", actor.id);
+      return true;
     } catch (error) {
       console.error("Error deleting actor:", error);
+      return false;
     }
   };
 
@@ -162,6 +202,7 @@ export default function AdminActorPage() {
             options={{
               country: countries,
             }}
+            onAdd={handleAddActor}
             onEdit={handleEditActor}
             onDelete={handleDeleteActor}
             onPageChange={handlePageChange}
@@ -169,7 +210,6 @@ export default function AdminActorPage() {
             pageSize={pagination.pageSize}
             totalItems={pagination.totalItems}
             totalPages={pagination.totalPages}
-
             // filter and search
             filters={{
               country: countries,
@@ -179,7 +219,6 @@ export default function AdminActorPage() {
             }}
             onFilterChange={handleFilterChange}
             applySearch
-            realtimeSearch
             placeholderSearch="Search actor..."
             onSearchApply={(searchTerm) =>
               handleFilterChange("searchTerm", searchTerm)

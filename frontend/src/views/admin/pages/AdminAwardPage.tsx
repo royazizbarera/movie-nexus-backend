@@ -18,6 +18,7 @@ import {
   AwardModel,
   AwardModelTable,
   AwardParamsModel,
+  convertAwardModelToTable,
 } from "../../../models/AwardModel";
 import countryController from "../../../controllers/CountryController";
 import { PaginationModel } from "../../../models/PaginationModel";
@@ -25,15 +26,7 @@ import {
   PAGE_SIZE_DROPDOWN,
   SORT_ORDER_DROPDOWN,
 } from "../../../configs/constants";
-
-function convertAwardModelToTable(award: AwardModel): AwardModelTable {
-  return {
-    id: award.id,
-    name: award.name,
-    year: award.year.toString(),
-    country: award.country.name,
-  };
-}
+import { CountryModel } from "../../../models/CountryModel";
 
 const columns: any[] = [
   {
@@ -51,6 +44,7 @@ const columns: any[] = [
 export default function AdminAwardPage() {
   const [awards, setAwards] = React.useState<AwardModelTable[]>([]);
   const [countries, setCountries] = React.useState<string[]>([]);
+  const [realCountries, setRealCountries] = React.useState<CountryModel[]>([]);
 
   const [pagination, setPagination] = React.useState<PaginationModel>({
     page: 1,
@@ -78,6 +72,7 @@ export default function AdminAwardPage() {
     try {
       const response = await countryController.getCountries();
       const data = response.data;
+      setRealCountries(data);
       setCountries(data.map((country) => country.name));
     } catch (error) {
       console.error("Error fetching countrys:", error);
@@ -93,29 +88,66 @@ export default function AdminAwardPage() {
     fetchAwards(awardParams); // Pass current page to fetchAwards
   }, [awardParams]);
 
-  const handleEditAward = async (updatedAward: AwardModelTable) => {
+  // TODO: ADD Award
+  const handleAddAward = async (newAward: AwardModelTable) => {
     try {
-      // Kirim data yang telah diubah ke endpoint tertentu
-      // const response = await axios.put(`http://localhost:3001/award/${updatedAward.id}`, updatedAward);
-      // console.log('Award updated successfully:', response.data);
-      console.info("update award: ", updatedAward);
+      const parsedAward: AwardModel = {
+        id: 0,
+        name: newAward.name,
+        year: new Date(newAward.year),
+        countryCode:
+          realCountries.find((c) => c.name === newAward.country)?.code || "",
+      };
+      const response = await awardController.addAward(parsedAward);
+      console.info("add award: ", newAward);
+      fetchAwards(awardParams);
+      if(response.code !== 201) {
+        return false;
+      }
+      return true;
     } catch (error) {
-      console.error("Error updating award:", error);
+      console.error("Error adding award:", error);
+      return false;
     }
   };
 
+  // TODO: UPDATE Award
+  const handleEditAward = async (updatedAward: AwardModelTable) => {
+    try {
+      const parsedAward: AwardModel = {
+        id: updatedAward.id,
+        name: updatedAward.name,
+        year: new Date(updatedAward.year),
+        countryCode:
+          realCountries.find((c) => c.name === updatedAward.country)?.code || "",
+      };
+      const response = await awardController.updateAward(updatedAward.id, parsedAward);
+      fetchAwards(awardParams);
+      if(response.code !== 200) {
+        return false;
+      }
+      console.info("update award: ", updatedAward);
+      return true;
+    } catch (error) {
+      console.error("Error updating award:", error);
+      return false;
+    }
+  };
+
+  // TODO: DELETE Award
   const handleDeleteAward = async (award: AwardModelTable) => {
     try {
       const response = await awardController.deleteAward(award.id);
-      setAwards((prevAwards) => prevAwards.filter((m) => m.id !== award.id));
-      setPagination((prevPagination) => ({
-        ...prevPagination,
-        totalItems: prevPagination.totalItems - 1,
-      }));
+      fetchAwards(awardParams);
+      if(response.code !== 200) {
+        return false;
+      }
       console.log("Award deleted successfully:", response.message);
       console.info("delete award with id: ", award.id);
+      return true;
     } catch (error) {
       console.error("Error deleting award:", error);
+      return false;
     }
   };
 
@@ -162,6 +194,7 @@ export default function AdminAwardPage() {
             options={{
               country: countries,
             }}
+            onAdd={handleAddAward}
             onEdit={handleEditAward}
             onDelete={handleDeleteAward}
             onPageChange={handlePageChange}
@@ -177,7 +210,6 @@ export default function AdminAwardPage() {
             }}
             onFilterChange={handleFilterChange}
             applySearch
-            realtimeSearch
             placeholderSearch="Search award..."
             onSearchApply={(searchTerm) =>
               handleFilterChange("searchTerm", searchTerm)

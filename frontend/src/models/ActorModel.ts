@@ -3,10 +3,10 @@ import { CountryModel } from "./CountryModel";
 export interface ActorModel {
   id: number;
   name: string;
-  birthDate: Date;
+  birthDate: string;
   photoUrl: string;
   countryCode: string;
-  country: CountryModel;
+  country?: CountryModel;
 }
 
 export interface ActorModelTable {
@@ -35,4 +35,22 @@ export interface ActorParamsModel {
   country?: string;
   sortBy?: string;
   sortOrder?: string;
+}
+
+
+
+
+
+
+
+
+
+export function convertActorModelToTable(actor: ActorModel): ActorModelTable {
+  return {
+    id: actor.id,
+    name: actor.name,
+    birthDate: actor.birthDate.toString(),
+    photoUrl: actor.photoUrl,
+    country: actor.country?.name || '',
+  };
 }

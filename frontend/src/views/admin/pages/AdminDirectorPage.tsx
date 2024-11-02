@@ -15,6 +15,7 @@ import { AdminTableLayout } from "../layouts/AdminTableLayout";
 import GenericTable from "../components/GenericTable";
 import directorController from "../../../controllers/DirectorController";
 import {
+  convertDirectorModelToTable,
   DirectorModel,
   DirectorModelTable,
   DirectorParamsModel,
@@ -25,18 +26,9 @@ import {
   PAGE_SIZE_DROPDOWN,
   SORT_ORDER_DROPDOWN,
 } from "../../../configs/constants";
+import { CountryModel } from "../../../models/CountryModel";
 
-function convertDirectorModelToTable(
-  director: DirectorModel
-): DirectorModelTable {
-  return {
-    id: director.id,
-    name: director.name,
-    birthDate: director.birthDate.toString(),
-    photoUrl: director.photoUrl,
-    country: director.country.name,
-  };
-}
+
 
 const columns: any[] = [
   {
@@ -55,6 +47,9 @@ const columns: any[] = [
 export default function AdminDirectorPage() {
   const [directors, setDirectors] = React.useState<DirectorModelTable[]>([]);
   const [countries, setCountries] = React.useState<string[]>([]);
+  const [realCountries, setRealCountries] = React.useState<CountryModel[]>([]);
+
+
   const [pagination, setPagination] = React.useState<PaginationModel>({
     page: 1,
     pageSize: 24,
@@ -85,6 +80,8 @@ export default function AdminDirectorPage() {
     try {
       const response = await countryController.getCountries();
       const data = response.data;
+
+      setRealCountries(data);
       setCountries(data.map((country) => country.name));
     } catch (error) {
       console.error("Error fetching countrys:", error);
@@ -100,31 +97,72 @@ export default function AdminDirectorPage() {
     fetchDirectors(directorParams); // Pass current directorParams to fetchDirectors
   }, [directorParams]);
 
-  const handleEditDirector = async (updatedDirector: DirectorModelTable) => {
+  // TODO: Implement add director
+  const handleAddDirector = async (newDirector: DirectorModelTable) => {
     try {
-      // Kirim data yang telah diubah ke endpoint tertentu
-      // const response = await axios.put(`http://localhost:3001/director/${updatedDirector.id}`, updatedDirector);
-      // console.log('Director updated successfully:', response.data);
-      console.info("update director: ", updatedDirector);
+      const parsedDirector: DirectorModel = {
+        id: newDirector.id,
+        name: newDirector.name,
+        birthDate: newDirector.birthDate,
+        photoUrl: newDirector.photoUrl,
+        countryCode:
+          realCountries.find((c) => c.name === newDirector.country)?.code || "",
+      };
+      const response = await directorController.addDirector(parsedDirector);
+      console.info("add director: ", parsedDirector);
+      fetchDirectors(directorParams);
+      if(response.code !== 201) {
+        return false;
+      }
+      return true;
     } catch (error) {
-      console.error("Error updating director:", error);
+      console.error("Error adding director:", error);
+      return false;
     }
   };
 
+
+  // TODO: Implement edit director
+  const handleEditDirector = async (updatedDirector: DirectorModelTable) => {
+    try {
+      const parsedDirector: DirectorModel = {
+        id: updatedDirector.id,
+        name: updatedDirector.name,
+        birthDate: new Date(updatedDirector.birthDate).toISOString(),
+        photoUrl: updatedDirector.photoUrl,
+        countryCode:
+          realCountries.find((c) => c.name === updatedDirector.country)?.code || "",
+      };
+      const response = await directorController.updateDirector(
+        updatedDirector.id,
+        parsedDirector
+      );
+      fetchDirectors(directorParams);
+      if (response.code !== 200) {
+        return false;
+      }
+      console.info("edit director: ", parsedDirector);
+      return true;
+    } catch (error) {
+      console.error("Error updating director:", error);
+      return false;
+    }
+  };
+
+  // TODO: Implement delete director
   const handleDeleteDirector = async (director: DirectorModelTable) => {
     try {
       const response = await directorController.deleteDirector(director.id);
-      setDirectors((prevDirectors) =>
-        prevDirectors.filter((m) => m.id !== director.id)
-      );
-      setPagination((prevPagination) => ({
-        ...prevPagination,
-        totalItems: prevPagination.totalItems - 1,
-      }));
+      fetchDirectors(directorParams);
+      if (response.code !== 200) {
+        return false;
+      }
       console.log("Director deleted successfully:", response.message);
       console.info("delete director with id: ", director.id);
+      return true;
     } catch (error) {
       console.error("Error deleting director:", error);
+      return false;
     }
   };
 
@@ -171,6 +209,7 @@ export default function AdminDirectorPage() {
             options={{
               country: countries,
             }}
+            onAdd={handleAddDirector}
             onEdit={handleEditDirector}
             onDelete={handleDeleteDirector}
             onPageChange={handlePageChange}

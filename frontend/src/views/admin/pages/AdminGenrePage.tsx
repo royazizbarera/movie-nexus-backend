@@ -61,7 +61,7 @@ export default function AdminGenrePage() {
     fetchGenres(genreParams); // Pass current page to fetchGenres
   }, [genreParams]);
 
-  // TODO: Genre CRUD operations
+  // TODO (DONE): Genre CRUD operations
   const fetchGenres = async (genreParamsModel: GenreParamsModel) => {
     try {
       const response = await genreController.getGenres(genreParamsModel);
@@ -74,7 +74,7 @@ export default function AdminGenrePage() {
     }
   };
 
-  // TODO: ADD Genre
+  // TODO (DONE): ADD Genre
   const handleAddGenre = async (newGenre: GenreModelTable) => {
     try {
       const response = await genreController.addGenre(newGenre.name);
@@ -96,6 +96,7 @@ export default function AdminGenrePage() {
     }
   };
 
+  // TODO (DONE): EDIT Genre
   const handleEditGenre = async (updatedGenre: GenreModelTable) => {
     try {
       // Kirim data yang telah diubah ke endpoint tertentu
@@ -119,7 +120,7 @@ export default function AdminGenrePage() {
     }
   };
 
-  // TODO: DELETE Genre
+  // TODO (DONE): DELETE Genre
   const handleDeleteGenre = async (genre: GenreModelTable) => {
     try {
       const response = await genreController.deleteGenre(genre.id);

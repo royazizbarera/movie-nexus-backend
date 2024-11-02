@@ -5,7 +5,7 @@ export interface AwardModel {
   name: string;
   year: Date;
   countryCode: string;
-  country: CountryModel;
+  country?: CountryModel;
 }
 
 export interface AwardModelTable {
@@ -23,4 +23,15 @@ export interface AwardParamsModel {
   country?: string;
   sortBy?: string;
   sortOrder?: string;
+}
+
+
+
+export function convertAwardModelToTable(award: AwardModel): AwardModelTable {
+  return {
+    id: award.id,
+    name: award.name,
+    year: award.year.toString(),
+    country: award.country?.name || award.countryCode,
+  };
 }
