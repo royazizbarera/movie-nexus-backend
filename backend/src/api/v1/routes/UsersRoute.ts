@@ -1,6 +1,6 @@
 import express from "express";
 import UserController from "../controllers/UserController";
-import {verifyToken} from "../middlewares/verifyToken";
+import {verifyAdmin} from "../middlewares/verifyAdmin";
 
 const router = express.Router();
 
@@ -9,6 +9,6 @@ const router = express.Router();
  * @description Get a list of all users
  * @access Private
  */
-router.get("/", verifyToken, UserController.getUsers);
+router.get("/", verifyAdmin, UserController.getUsers);
 
 export default router;

@@ -1,6 +1,6 @@
 import express from "express";
 import countryController from "../controllers/CountryController";
-import { verifyToken } from "../middlewares/verifyToken";
+import {verifyAdmin} from "../middlewares/verifyAdmin";
 
 const router = express.Router();
 
@@ -23,20 +23,20 @@ router.get("/:code", countryController.getCountryByCode);
  * @description Create a new country
  * @access Private
  */
-router.post("/", verifyToken, countryController.createCountry);
+router.post("/", verifyAdmin, countryController.createCountry);
 
 /**
  * @route PUT /countries/:code
  * @description Update a country by its code
  * @access Private
  */
-router.put("/:code", verifyToken, countryController.updateCountryByCode);
+router.put("/:code", verifyAdmin, countryController.updateCountryByCode);
 
 /**
  * @route DELETE /countries/:code
  * @description Delete a country by its code
  * @access Private
  */
-router.delete("/:code", verifyToken, countryController.deleteCountryByCode);
+router.delete("/:code", verifyAdmin, countryController.deleteCountryByCode);
 
 export default router;

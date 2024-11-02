@@ -1,6 +1,6 @@
 import express from "express";
 import genreController from "../controllers/GenreController";
-import { verifyToken } from "../middlewares/verifyToken";
+import {verifyAdmin} from "../middlewares/verifyAdmin";
 
 const router = express.Router();
 
@@ -23,20 +23,20 @@ router.get("/:id", genreController.getGenreById);
  * @description Create a new genre
  * @access Private
  */
-router.post("/", verifyToken, genreController.createGenre);
+router.post("/", verifyAdmin, genreController.createGenre);
 
 /**
  * @route PUT /genres/:id
  * @description Update a genre by ID
  * @access Private
  */
-router.put("/:id", verifyToken, genreController.updateGenreById);
+router.put("/:id", verifyAdmin, genreController.updateGenreById);
 
 /**
  * @route DELETE /genres/:id
  * @description Delete a genre by ID
  * @access Private
  */
-router.delete("/:id", verifyToken, genreController.deleteGenreById);
+router.delete("/:id", verifyAdmin, genreController.deleteGenreById);
 
 export default router;

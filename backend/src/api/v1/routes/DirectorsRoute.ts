@@ -1,6 +1,6 @@
 import express from "express";
 import directorController from "../controllers/DirectorController";
-import { verifyToken } from "../middlewares/verifyToken";
+import {verifyAdmin} from "../middlewares/verifyAdmin";
 
 const router = express.Router();
 
@@ -23,20 +23,20 @@ router.get("/:id", directorController.getDirectorById);
  * @description Create a new director
  * @access Private
  */
-router.post("/", verifyToken, directorController.createDirector);
+router.post("/", verifyAdmin, directorController.createDirector);
 
 /**
  * @route PUT /directors/:id
  * @description Update a director by ID
  * @access Private
  */
-router.put("/:id", verifyToken, directorController.updateDirectorById);
+router.put("/:id", verifyAdmin, directorController.updateDirectorById);
 
 /**
  * @route DELETE /directors/:id
  * @description Delete a director by ID
  * @access Private
  */
-router.delete("/:id", verifyToken, directorController.deleteDirectorById);
+router.delete("/:id", verifyAdmin, directorController.deleteDirectorById);
 
 export default router;

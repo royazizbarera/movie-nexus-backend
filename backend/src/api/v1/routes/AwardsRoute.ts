@@ -1,6 +1,6 @@
 import express from "express";
 import awardController from "../controllers/AwardController";
-import { verifyToken } from "../middlewares/verifyToken";
+import {verifyAdmin} from "../middlewares/verifyAdmin";
 
 const router = express.Router();
 
@@ -23,20 +23,20 @@ router.get("/:id", awardController.getAwardById);
  * @description Create a new award
  * @access Private
  */
-router.post("/", verifyToken, awardController.createAward);
+router.post("/", verifyAdmin, awardController.createAward);
 
 /**
  * @route PUT /awards/:id
  * @description Update an award by ID
  * @access Private
  */
-router.put("/:id", verifyToken, awardController.updateAwardById);
+router.put("/:id", verifyAdmin, awardController.updateAwardById);
 
 /**
  * @route DELETE /awards/:id
  * @description Delete an award by ID
  * @access Private
  */
-router.delete("/:id", verifyToken, awardController.deleteAwardById);
+router.delete("/:id", verifyAdmin, awardController.deleteAwardById);
 
 export default router;

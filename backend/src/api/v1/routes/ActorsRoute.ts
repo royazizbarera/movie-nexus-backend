@@ -1,6 +1,6 @@
 import express from "express";
 import actorController from "../controllers/ActorController";
-import { verifyToken } from "../middlewares/verifyToken";
+import {verifyAdmin} from "../middlewares/verifyAdmin";
 
 const router = express.Router();
 
@@ -23,20 +23,20 @@ router.get("/:id", actorController.getActorById);
  * @description Create a new actor
  * @access Private
  */
-router.post("/", verifyToken, actorController.createActor);
+router.post("/", verifyAdmin, actorController.createActor);
 
 /**
  * @route DELETE /actors/:id
  * @description Delete an actor by ID
  * @access Private
  */
-router.delete("/:id", verifyToken, actorController.deleteActorById);
+router.delete("/:id", verifyAdmin, actorController.deleteActorById);
 
 /**
  * @route PUT /actors/:id
  * @description Update an actor by ID
  * @access Private
  */
-router.put("/:id", verifyToken, actorController.updateActorById);
+router.put("/:id", verifyAdmin, actorController.updateActorById);
 
 export default router;
