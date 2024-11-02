@@ -65,9 +65,9 @@ class ActorService {
             if (searchTerm) {
                 const searchQuery = `
                 SELECT id
-                FROM "Movie"
-                WHERE SIMILARITY("title", $1) > 0.01 OR SIMILARITY("synopsis", $1) > 0.01
-                ORDER BY SIMILARITY("title", $1) DESC
+                FROM "Actor"
+                WHERE SIMILARITY("name", $1) > 0.01
+                ORDER BY SIMILARITY("name", $1) DESC
                 LIMIT $2 OFFSET $3;
             `;
                 const searchResults = await prisma.$queryRawUnsafe(searchQuery, searchTerm, pageSize, skip) as any[];
@@ -181,6 +181,7 @@ class ActorService {
     async deleteActorById(id: number): Promise<{ message: string, deletedActor: any }> {
         try {
             const deletedActor = await prisma.$transaction(async (prisma) => {
+                await prisma.movieActors.deleteMany({where: {actorId: id}});
                 return prisma.actor.delete({where: {id}});
             });
 
