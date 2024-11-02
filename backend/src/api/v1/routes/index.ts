@@ -11,6 +11,7 @@ import authRouter from "./AuthRoute";
 import usersRouter from "./UsersRoute";
 import mailRouter from "./MailRoute";
 import directorsRouter from "./DirectorsRoute";
+import reviewsRouter from "./ReviewsRoute";
 
 /**
  * @route /actors
@@ -65,5 +66,11 @@ routers.use("/mail", mailRouter);
  * @description Routes for director-related operations
  */
 routers.use("/directors", directorsRouter);
+
+/**
+ * @route /reviews
+ * @description Routes for review-related operations
+ */
+routers.use("/reviews", reviewsRouter);
 
 export default routers;

@@ -103,7 +103,6 @@ class MovieService {
                 synopsis,
                 posterUrl,
                 releaseDate,
-                approvalStatus,
                 rating,
                 backdropUrl,
                 videoUrl,
@@ -111,8 +110,22 @@ class MovieService {
                 directorId,
                 genres,
                 actors,
-                awards
+                awards,
+                email
             } = movieData;
+
+            const user = await prisma.user.findUnique({
+                where: { email },
+                select: { role: true }
+            });
+
+            if (!user) {
+                throw new Error("User not found");
+            }
+
+            let approvalStatus: boolean;
+
+            approvalStatus = user.role == "admin";
 
             const newMovie = await prisma.$transaction(async (prisma) => {
                 const movie = await prisma.movie.create({
@@ -121,7 +134,7 @@ class MovieService {
                         synopsis,
                         posterUrl,
                         releaseDate: new Date(releaseDate),
-                        approvalStatus: Boolean(approvalStatus),
+                        approvalStatus: approvalStatus,
                         rating: parseFloat(rating),
                         backdropUrl,
                         videoUrl,

@@ -80,6 +80,22 @@ const addDirectorFilter = (whereClause: any = {AND: []}, director: string) => {
     });
 }
 
+const addRatingFilter = (whereClause: any = {AND: []}, rating: number) => {
+    whereClause.AND.push({
+        rating: {
+            eq: rating,
+        },
+    });
+}
+
+const addUserIdFilter = (whereClause: any = {AND: []}, userId: number) => {
+    whereClause.AND.push({
+        userId: {
+            eq: userId,
+        },
+    });
+}
+
 export {
     addGenreFilter,
     addCountryFilter,
@@ -87,5 +103,7 @@ export {
     addMovieYearFilter,
     addAwardYearFilter,
     addAwardFilter,
-    addDirectorFilter
+    addDirectorFilter,
+    addRatingFilter,
+    addUserIdFilter,
 };
