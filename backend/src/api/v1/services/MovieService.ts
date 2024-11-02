@@ -1,6 +1,5 @@
 import prisma from "../config/client";
 import SearchParams from "../helpers/SearchParams";
-import {handleFilter} from "../helpers/handleFilter";
 
 class MovieService {
     joinTable = {
@@ -272,7 +271,7 @@ class MovieService {
         params: SearchParams;
     }): Promise<any[]> {
         const skip = (page - 1) * pageSize;
-        const {filters, searchTerm, sortBy, sortOrder, genre, country, actor, year, award, director} = params;
+        const {searchTerm, sortBy, sortOrder, genre, country, actor, year, award, director} = params;
         const whereClause: any = {AND: []};
 
         const addGenreFilter = (genre: string) => {
@@ -351,10 +350,6 @@ class MovieService {
                 },
             });
         }
-
-        // if (filters) {
-        //     whereClause.AND.push(handleFilter(filters));
-        // }
 
         if (whereClause.AND.length === 0) {
             delete whereClause.AND;
