@@ -137,11 +137,9 @@ class ReviewService {
                 throw new Error("User not found");
             }
 
-            let approvalStatus = false;
+            let approvalStatus: boolean;
 
-            if (user.role === "admin") {
-                approvalStatus = true;
-            }
+            approvalStatus = user.role == "admin";
 
             return await prisma.$transaction(async (prisma) => {
                 const review = await prisma.review.create({

@@ -28,11 +28,14 @@ export default async function insertDummyData() {
     async function main() {
         dotenv.config();
 
-        // Check if the database is already seeded
-        const seeded = await prisma.user.findFirst();
-        if (seeded) {
-            console.log("Database already seeded.");
-            throw new Error("Database already seeded.");
+        const user = await prisma.user.findFirst({
+            where: {
+                email: users[0].email,
+            },
+        });
+
+        if (user) {
+            throw new Error("Dummy data already inserted");
         }
 
         // Helper function to perform batch upserts
@@ -105,22 +108,24 @@ export default async function insertDummyData() {
         );
 
         const maxMovieId = Math.max(...movies.map((movie) => movie.id));
-        await prisma.$executeRaw`ALTER SEQUENCE "Movie_id_seq" RESTART WITH ${maxMovieId + 1}`;
+        await prisma.$executeRawUnsafe(`ALTER SEQUENCE "Movie_id_seq" RESTART WITH ${maxMovieId + 1}`);
 
         const maxActorId = Math.max(...actors.map((actor) => actor.id));
-        await prisma.$executeRaw`ALTER SEQUENCE "Actor_id_seq" RESTART WITH ${maxActorId + 1}`;
+        await prisma.$executeRawUnsafe(`ALTER SEQUENCE "Actor_id_seq" RESTART WITH ${maxActorId + 1}`);
 
         const maxDirectorId = Math.max(...directors.map((director) => director.id));
-        await prisma.$executeRaw`ALTER SEQUENCE "Director_id_seq" RESTART WITH ${maxDirectorId + 1}`;
+        await prisma.$executeRawUnsafe(`ALTER SEQUENCE "Director_id_seq" RESTART WITH ${maxDirectorId + 1}`);
 
         const maxGenreId = Math.max(...genres.map((genre) => genre.id));
-        await prisma.$executeRaw`ALTER SEQUENCE "Genre_id_seq" RESTART WITH ${maxGenreId + 1}`;
+        await prisma.$executeRawUnsafe(`ALTER SEQUENCE "Genre_id_seq" RESTART WITH ${maxGenreId + 1}`);
 
         const maxAwardId = Math.max(...awards.map((award) => award.id));
-        await prisma.$executeRaw`ALTER SEQUENCE "Award_id_seq" RESTART WITH ${maxAwardId + 1}`;
+        console.log(maxAwardId);
+        console.log("UwU");
+        await prisma.$executeRawUnsafe(`ALTER SEQUENCE "Award_id_seq" RESTART WITH ${maxAwardId + 1}`);
 
         const maxUserId = Math.max(...users.map((user) => user.id));
-        await prisma.$executeRaw`ALTER SEQUENCE "User_id_seq" RESTART WITH ${maxUserId + 1}`;
+        await prisma.$executeRawUnsafe(`ALTER SEQUENCE "User_id_seq" RESTART WITH ${maxUserId + 1}`);
     }
 
     await main();

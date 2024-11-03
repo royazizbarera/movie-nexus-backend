@@ -120,6 +120,10 @@ class CountryService {
         try {
             const { code, name } = countryData;
 
+            if (!code || !name) {
+                throw new Error("Country code and name are required");
+            }
+
             return await prisma.$transaction(async (prisma) => {
                 const country = await prisma.country.create({
                     data: {
