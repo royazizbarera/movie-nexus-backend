@@ -76,6 +76,7 @@ export interface Column<T> {
 
 interface GenericTableProps<T> {
   title?: string; // Title of the table
+  titleSolo?: string;
   data: T[];
   columns: Column<T>[];
   renderRowActions?: (item: T) => React.ReactNode; // Optionally allow custom row actions
@@ -102,6 +103,7 @@ interface GenericTableProps<T> {
 }
 export default function GenericTable<T>({
   title,
+  titleSolo = title,
   data,
   columns,
   renderRowActions,
@@ -146,7 +148,7 @@ export default function GenericTable<T>({
     autoHideDuration: 5000,
   };
 
-  // TODO: Snackbar for all actions
+  // TODO (DONE): Snackbar for all actions
   const [snackbarState, setSnackbarState] =
     React.useState<SnackbarState>(defaultSnackbarState);
 
@@ -158,7 +160,7 @@ export default function GenericTable<T>({
     setSnackbarState((prev) => ({ ...prev, open: false }));
   };
 
-  // TODO: Handle filter change
+  // TODO (DONE): Handle filter change
   const handlePageChange = (newPage: number) => {
     onPageChange(newPage);
   };
@@ -175,7 +177,7 @@ export default function GenericTable<T>({
     }
   };
 
-  // TODO: Handle modal behavior
+  // TODO (DONE): Handle modal behavior
   // Handle modal opening
   const handleOpenAddModal = () => {
     setNewItem({} as T);
@@ -201,21 +203,49 @@ export default function GenericTable<T>({
     setSelectedItem(null);
   };
 
-  // TODO: Handle delete item
+  // TODO (DONE): Handle delete item
   // Handle delete item
   const handleDeleteItem = async () => {
     if (!selectedItem) return;
 
     try {
-      await onDelete(selectedItem);
+      const success = await onDelete(selectedItem);
+      success
+        ? handleOpenSnackbar({
+            ...defaultSnackbarState,
+            open: true,
+            title: "Item deleted successfully",
+            key: "item_deleted_success",
+            color: "warning",
+            variant: "solid",
+            autoHideDuration: 5000,
+          })
+        : handleOpenSnackbar({
+            ...defaultSnackbarState,
+            open: true,
+            title: "Failed to delete item",
+            key: "failed_delete_item",
+            color: "danger",
+            variant: "solid",
+            autoHideDuration: 5000,
+          });
     } catch (error) {
       console.error("Failed to delete item", error);
+      handleOpenSnackbar({
+        ...defaultSnackbarState,
+        open: true,
+        title: "Failed to delete item",
+        key: "failed_delete_item",
+        color: "danger",
+        variant: "solid",
+        autoHideDuration: 5000,
+      });
     } finally {
       setOpenDeleteItemModal(false);
     }
   };
 
-  // TODO: Handle delete items
+  // TODO (DONE): Handle delete items
   const handleDeleteItems = async () => {
     try {
       // Loop melalui item yang dipilih dan panggil fungsi delete untuk setiap item
@@ -237,17 +267,37 @@ export default function GenericTable<T>({
           }
         }
       }
+      // open snackbar success
+      handleOpenSnackbar({
+        ...defaultSnackbarState,
+        open: true,
+        title: "Items deleted successfully",
+        key: "items_deleted_success",
+        color: "warning",
+        variant: "solid",
+        autoHideDuration: 5000,
+      });
 
       // Reset selected setelah berhasil dihapus
       setSelected([]);
     } catch (error) {
       console.error("Failed to delete items", error);
+      // open snackbar error
+      handleOpenSnackbar({
+        ...defaultSnackbarState,
+        open: true,
+        title: "Failed to delete items",
+        key: "failed_delete_items",
+        color: "danger",
+        variant: "solid",
+        autoHideDuration: 5000,
+      });
     } finally {
       setOpenDeleteItemsModal(false);
     }
   };
 
-  // TODO: Handle form submission for edit
+  // TODO (DONE): Handle form submission for edit
   // Handle form submission for edit
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -289,7 +339,7 @@ export default function GenericTable<T>({
     }
   };
 
-  // TODO: Handle form submission for add
+  // TODO (DONE): Handle form submission for add
   const handleFormAddSubmit = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
@@ -518,7 +568,7 @@ export default function GenericTable<T>({
             Delete Selected Items
           </Button>
           {/* simple add item */}
-          {!simpleAddItem ? (
+          {!simpleAddItem && (
             <Button
               variant="solid"
               color="success"
@@ -527,47 +577,113 @@ export default function GenericTable<T>({
             >
               Add Item
             </Button>
-          ) : (
-            <>
-              <form
-                onSubmit={(event: React.FormEvent<HTMLFormElement>) => {
-                  event.preventDefault();
-                  handleFormAddSubmit(event);
-                  event.currentTarget.reset();
-                }}
-              >
-                <Stack
-                  spacing={2}
-                  direction={"row"}
-                  sx={{
-                    alignItems: "flex-end",
-                  }}
-                >
-                  {columns.map((col) =>
-                    col.readonly ? null : (
-                      <FormControl key={col.key as string}>
-                        <FormLabel>{col.label}</FormLabel>
-                        {renderInputField(
-                          col,
-                          options[col.key as string] || []
-                        )}
-                      </FormControl>
-                    )
-                  )}
-                  <Button
-                    type="submit"
-                    sx={{
-                      height: "fit-content",
-                    }}
-                  >
-                    Submit
-                  </Button>
-                </Stack>
-              </form>
-            </>
           )}
         </Box>
       </Box>
+
+      {simpleAddItem && (
+        <Box
+          flex={1}
+          flexGrow={1}
+          gap={2}
+          justifyContent={{
+            xs: "space-between",
+            sm: "flex-end",
+          }}
+          sx={{
+            alignItems: "flex-end",
+            display: "flex",
+            flexDirection: {
+              xs: "column",
+              sm: "columm",
+            },
+          }}
+        >
+          {/* simple add item */}
+
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              flexGrow: {
+                xs: 1,
+                sm: 1,
+                md: 1,
+              },
+              width: {
+                xs: "100%",
+                sm: "100%",
+                md: "100%",
+              },
+            }}
+          >
+            <form
+              onSubmit={(event: React.FormEvent<HTMLFormElement>) => {
+                event.preventDefault();
+                handleFormAddSubmit(event);
+                event.currentTarget.reset();
+              }}
+              style={{
+                display: "flex",
+                gap: 2,
+                flexGrow: 1,
+              }}
+            >
+              <Stack
+                spacing={2}
+                direction={"row"}
+                gap={2}
+                sx={{
+                  alignItems: "flex-end",
+                  display: "flex",
+                  flexDirection: {
+                    xs: "column",
+                    sm: "column",
+                    md: "row",
+                  },
+                  width: {
+                    xs: "100%",
+                    sm: "100%",
+                    md: "100%",
+                  },
+                }}
+              >
+                {columns.map((col) =>
+                  col.readonly ? null : (
+                    <FormControl
+                      key={col.key as string}
+                      sx={{
+                        display: "flex",
+                        flexGrow: 1,
+                        width: {
+                          xs: "100%",
+                          sm: "100%",
+                          md: "100%",
+                        },
+                      }}
+                    >
+                      <FormLabel>{col.label}</FormLabel>
+                      {renderInputField(col, options[col.key as string] || [])}
+                    </FormControl>
+                  )
+                )}
+                <Button
+                  type="submit"
+                  sx={{
+                    height: "fit-content",
+                    width: {
+                      xs: "100%",
+                      sm: "100%",
+                    },
+                  }}
+                >
+                  {"Add " + titleSolo}
+                </Button>
+              </Stack>
+            </form>
+          </Box>
+        </Box>
+      )}
       <AccordionGroup
         size={"sm"}
         transition={{
@@ -639,6 +755,7 @@ export default function GenericTable<T>({
                     xl={10}
                     sx={{ display: "flex", justifyContent: "center", px: 0 }}
                   >
+                    {/* TODO: Optimasi pencarian menggunakan form */}
                     {/* Search Bar */}
                     <Input
                       placeholder={placeholderSearch}

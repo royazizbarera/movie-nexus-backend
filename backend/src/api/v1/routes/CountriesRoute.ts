@@ -1,34 +1,42 @@
 import express from "express";
 import countryController from "../controllers/CountryController";
-import HttpStatus from "../config/constants/HttpStatus";
-import ResponseApi from "../config/ResponseApi";
+import {verifyAdmin} from "../middlewares/verifyAdmin";
 
 const router = express.Router();
 
+/**
+ * @route GET /countries
+ * @description Get a list of all countries
+ * @access Public
+ */
 router.get("/", countryController.getCountries);
 
-router.get("/:id", async (req, res) => {
-  (req.params.id);
-  try {
-    const country = await countryController.getCountryById(req.params.id);
-    return res.json(
-      ResponseApi({
-        code: HttpStatus.OK,
-        message: "Country fetched successfully",
-        data: country,
-        version: 1.0,
-      })
-    );
-  } catch (error) {
-    return res.json(
-      ResponseApi({
-        code: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: "Failed to fetch country",
-        errors: error,
-        version: 1.0,
-      })
-    );
-  }
-});
+/**
+ * @route GET /countries/:code
+ * @description Get a single country by its code
+ * @access Public
+ */
+router.get("/:code", countryController.getCountryByCode);
+
+/**
+ * @route POST /countries
+ * @description Create a new country
+ * @access Private
+ */
+router.post("/", verifyAdmin, countryController.createCountry);
+
+/**
+ * @route PUT /countries/:code
+ * @description Update a country by its code
+ * @access Private
+ */
+router.put("/:code", verifyAdmin, countryController.updateCountryByCode);
+
+/**
+ * @route DELETE /countries/:code
+ * @description Delete a country by its code
+ * @access Private
+ */
+router.delete("/:code", verifyAdmin, countryController.deleteCountryByCode);
 
 export default router;

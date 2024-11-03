@@ -1,8 +1,7 @@
 import HttpStatus from "../config/constants/HttpStatus";
 import ResponseApi from "../config/ResponseApi";
 import actorService from "../services/ActorService";
-import {Response, Request} from "express";
-import movieService from "../services/MovieService";
+import { Response, Request } from "express";
 
 class ActorController {
     /**
@@ -15,16 +14,17 @@ class ActorController {
      */
     async getActors(req: Request, res: Response): Promise<Response> {
         try {
-            const parsedPage = parseInt(req.query.page as string) || 1; // Default ke 1 jika tidak ada
-            const parsedPageSize = parseInt(req.query.pageSize as string) || 24; // Default ke 24 jika tidak ada
-
             const {
-                searchTerm = '', // Default ke string kosong
-                country = '', // Default ke string kosong
-                sortBy = '', // Default ke string kosong
-                sortOrder = 'asc', // Default ke 'asc'
-                filters = [], // Default ke array kosong
+                page = "1",
+                pageSize = "24",
+                searchTerm = '',
+                country = '',
+                sortBy = '',
+                sortOrder = 'asc',
             } = req.query;
+
+            const parsedPage = parseInt(page as string, 10) || 1;
+            const parsedPageSize = parseInt(pageSize as string, 10) || 24;
 
             const [actors, totalItems] = await actorService.getActors({
                 page: parsedPage,
@@ -34,7 +34,6 @@ class ActorController {
                     country: country as string,
                     sortBy: sortBy as string,
                     sortOrder: sortOrder as "asc" | "desc",
-                    filters: Array.isArray(filters) ? filters : [], // Pastikan filters adalah array
                 },
             });
 
@@ -53,7 +52,7 @@ class ActorController {
                 })
             );
         } catch (error) {
-            console.error("Error fetching actors: ", error); // Logging untuk penelusuran
+            console.error("Error fetching actors: ", error);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
                 ResponseApi({
                     code: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -75,7 +74,7 @@ class ActorController {
      */
     async getActorById(req: Request, res: Response): Promise<Response> {
         try {
-            const actorId = parseInt(req.params.id);
+            const actorId = parseInt(req.params.id, 10);
 
             if (isNaN(actorId)) {
                 return res.status(HttpStatus.BAD_REQUEST).json(
@@ -108,7 +107,7 @@ class ActorController {
                 })
             );
         } catch (error) {
-            console.error("Error fetching actor: ", error); // Logging untuk penelusuran
+            console.error("Error fetching actor: ", error);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
                 ResponseApi({
                     code: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -120,9 +119,17 @@ class ActorController {
         }
     }
 
+    /**
+     * Creates a new actor.
+     *
+     * @param {Request} req - The Express request object containing the actor data in the body.
+     * @param {Response} res - The Express response object to send back the result.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the newly created actor's data.
+     * @throws {Error} If there is an issue creating the actor, an error message will be returned.
+     */
     async createActor(req: Request, res: Response): Promise<Response> {
         try {
-            const actorData = req.query;
+            const actorData = req.body;
 
             const newActor = await actorService.createActor(actorData);
 
@@ -135,7 +142,7 @@ class ActorController {
                 })
             );
         } catch (error) {
-            console.error("Error creating actor: ", error); // Logging untuk penelusuran
+            console.error("Error creating actor: ", error);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
                 ResponseApi({
                     code: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -147,50 +154,74 @@ class ActorController {
         }
     }
 
+    /**
+     * Updates an existing actor by their ID.
+     *
+     * @param {Request} req - The Express request object containing the actor ID in the route parameters and updated data in the body.
+     * @param {Response} res - The Express response object to send back the result.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the updated actor's data.
+     * @throws {Error} If there is an issue updating the actor, an error message will be returned.
+     */
     async updateActorById(req: Request, res: Response): Promise<Response> {
-        const actorId = parseInt(req.params.id);
-        const actorData = req.query;
+        const actorId = parseInt(req.params.id, 10);
+        const actorData = req.body;
 
         try {
-            const updatedMovie = await actorService.updateActorById(actorId, actorData);
+            const updatedActor = await actorService.updateActorById(actorId, actorData);
 
-            return res.json(ResponseApi({
-                code: HttpStatus.OK,
-                message: "Actor updated successfully",
-                data: updatedMovie,
-                version: 1.0,
-            }));
+            return res.json(
+                ResponseApi({
+                    code: HttpStatus.OK,
+                    message: "Actor updated successfully",
+                    data: updatedActor,
+                    version: 1.0,
+                })
+            );
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(ResponseApi({
-                code: HttpStatus.INTERNAL_SERVER_ERROR,
-                message: "Failed to update actor",
-                errors: errorMessage,
-                version: 1.0,
-            }));
+            console.error("Error updating actor: ", error);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
+                ResponseApi({
+                    code: HttpStatus.INTERNAL_SERVER_ERROR,
+                    message: "Failed to update actor",
+                    errors: error instanceof Error ? error.message : String(error),
+                    version: 1.0,
+                })
+            );
         }
     }
 
+    /**
+     * Deletes an actor by their ID.
+     *
+     * @param {Request} req - The Express request object containing the actor ID in the route parameters.
+     * @param {Response} res - The Express response object to send back the result.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response indicating the result of the delete operation.
+     * @throws {Error} If there is an issue deleting the actor, an error message will be returned.
+     */
     async deleteActorById(req: Request, res: Response): Promise<Response> {
-        const actorId = parseInt(req.params.id);
+        const actorId = parseInt(req.params.id, 10);
 
         try {
             const deletedActor = await actorService.deleteActorById(actorId);
 
-            return res.json(ResponseApi({
-                code: HttpStatus.OK,
-                message: "Actor deleted successfully",
-                data: deletedActor,
-                version: 1.0,
-            }));
+            return res.json(
+                ResponseApi({
+                    code: HttpStatus.OK,
+                    message: "Actor deleted successfully",
+                    data: deletedActor,
+                    version: 1.0,
+                })
+            );
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(ResponseApi({
-                code: HttpStatus.INTERNAL_SERVER_ERROR,
-                message: "Failed to delete actor",
-                errors: errorMessage,
-                version: 1.0,
-            }));
+            console.error("Error deleting actor: ", error);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
+                ResponseApi({
+                    code: HttpStatus.INTERNAL_SERVER_ERROR,
+                    message: "Failed to delete actor",
+                    errors: error instanceof Error ? error.message : String(error),
+                    version: 1.0,
+                })
+            );
         }
     }
 }

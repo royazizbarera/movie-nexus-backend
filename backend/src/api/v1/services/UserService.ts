@@ -1,218 +1,113 @@
-// import prisma from "../config/client";
-// import { Request, Response } from "express";
-// import bcrypt from "bcryptjs";
-// import jwt from "jsonwebtoken";
+import prisma from "../config/client";
+import SearchParams from "../helpers/SearchParams";
 
-// // import { hash } from 'bcryptjs';  // Menggunakan bcryptjs untuk hashing password
+class UserService {
+    /**
+     * Counts the number of users based on the provided where clause and optional user IDs.
+     * @param {object} whereClause - The conditions to filter the users.
+     * @param {any} [userIds] - Optional array of user IDs to filter.
+     * @returns {Promise<number>} The count of users.
+     * @throws {Error} If there is an issue counting the users.
+     */
+    async countUsers(whereClause: object, userIds?: any): Promise<number> {
+        try {
+            if (userIds) {
+                return prisma.user.count({
+                    where: {
+                        id: { in: userIds },
+                        ...whereClause,
+                    },
+                });
+            }
+            return prisma.user.count({ where: whereClause });
+        } catch (error) {
+            console.error("Error counting users:", error);
+            throw new Error("Could not count users");
+        }
+    }
 
-// export interface SignUpEmailAndPasswordRequest {
-//   username: string;
-//   email: string;
-//   password: string;
-// }
+    /**
+     * Retrieves a list of users based on pagination, search parameters, and filters.
+     * @param {object} options - The options for retrieving users.
+     * @param {number} [options.page=1] - The page number for pagination.
+     * @param {number} [options.pageSize=24] - The number of items per page.
+     * @param {SearchParams} options.params - The search parameters and filters.
+     * @returns {Promise<any[]>} A promise that resolves to an array containing the users and total items count.
+     * @throws {Error} If there is an issue fetching the users.
+     */
+    async getUsers({
+                        page = 1,
+                        pageSize = 24,
+                        params,
+                    }: {
+        page: number | undefined;
+        pageSize: number | undefined;
+        params: SearchParams;
+    }): Promise<any[]> {
+        const skip = (page - 1) * pageSize;
+        const { searchTerm, sortBy, sortOrder } = params;
+        const whereClause: any = { AND: [] };
 
-// class UserService {
-//   async signUpEmailAndPassword(request: SignUpEmailAndPasswordRequest) {
-//     const { username, email, password } = request;
+        if (whereClause.AND.length === 0) {
+            delete whereClause.AND;
+        }
 
-//     // 1. Validasi input: Pastikan semua data ada
-//     if (!username || !email || !password) {
-//       throw new Error("All fields must be provided");
-//     }
+        try {
+            let users;
+            let totalItems;
 
-//     // 2. Cek apakah pengguna dengan email atau username tersebut sudah ada
-//     const existingUser = await prisma.user.findFirst({
-//       where: {
-//         OR: [{ email }, { username }],
-//       },
-//     });
+            if (searchTerm) {
+                const searchQuery = `
+                SELECT id
+                FROM "User"
+                WHERE SIMILARITY("name", $1) > 0.01
+                ORDER BY SIMILARITY("name", $1) DESC
+                LIMIT $2 OFFSET $3;
+            `;
+                const searchResults = await prisma.$queryRawUnsafe(searchQuery, searchTerm, pageSize, skip) as any[];
 
-//     if (existingUser) {
-//       throw new Error("User with this email or username already exists");
-//     }
+                const userIds = searchResults.map(user => user.id);
+                users = await prisma.user.findMany({
+                    select: {
+                        id: true,
+                        username: true,
+                        photoProfile: true,
+                        email: true,
+                        role: true,
+                        isVerified: true
+                    },
+                    where: {
+                        id: { in: userIds },
+                        ...whereClause,
+                    },
+                    skip,
+                    take: pageSize,
+                });
+                totalItems = await this.countUsers(whereClause, userIds);
+            } else {
+                users = await prisma.user.findMany({
+                    select: {
+                        id: true,
+                        username: true,
+                        photoProfile: true,
+                        email: true,
+                        role: true,
+                        isVerified: true
+                    },
+                    where: whereClause,
+                    orderBy: sortBy ? { [sortBy]: sortOrder || "asc" } : undefined,
+                    skip,
+                    take: pageSize,
+                });
+                totalItems = await this.countUsers(whereClause);
+            }
 
-//     // 3. Hashing password menggunakan bcrypt
+            return [users, totalItems];
+        } catch (error) {
+            throw new Error("Error fetching users");
+        }
+    }
+}
 
-//     // 4. Simpan pengguna baru ke database
-//     const newUser = await prisma.user.create({
-//       data: {
-//         provider: "email",
-//         username,
-//         email,
-//         password,
-//       },
-//     });
-
-//     const token = jwt.sign(
-//       {
-//         id: newUser.id,
-//         email: newUser.email,
-//       },
-//       this.secret,
-//       {
-//         expiresIn: "1h",
-//       }
-//     );
-
-//     // 5. Kembalikan data pengguna tanpa mengembalikan password
-//     return {
-//       id: newUser.id,
-//       provider: newUser.provider,
-//       username: newUser.username,
-//       email: newUser.email,
-//       photoProfile: newUser.photoProfile,
-//       token: token,
-//     };
-//   }
-
-//   secret = process.env.JWT_SECRET as string;
-
-//   signInWithEmailAndPassword = async (email: string, password: string) => {
-//     try {
-//       // 1. Cari pengguna berdasarkan email
-//       const user = (await prisma.user.findUnique({
-//         where: {
-//           email: email,
-//         },
-//       })) as any;
-
-//       if (!user) {
-//         throw Error("Invalid email or password");
-//       }
-
-//       // 2. Bandingkan password
-//       // const isPasswordValid = await bcrypt.compare(password, user.password);
-//       const isPasswordValid = password === user.password;
-//       if (!isPasswordValid) {
-//         throw Error("Invalid email or password");
-//       }
-
-//       // 3. Buat token JWT
-//       const token = jwt.sign(
-//         {
-//           id: user.id,
-//           email: user.email,
-//         },
-//         this.secret,
-//         {
-//           expiresIn: "12h",
-//         }
-//       );
-
-//       // 4. Kirim token JWT ke frontend
-//       user.token = token;
-//       return user;
-//     } catch (error) {
-//       throw Error("Pengguna tidak ditemukan.");
-//     }
-//   };
-
-//   // check verification user using token by email
-//   isVerified = async (email: string) => {
-//     try {
-//       const user = await prisma.user.findFirst({
-//         where: {
-//           email: email,
-//         },
-//       });
-
-//       if (!user) {
-//         return user!.isVerified;
-//       }
-
-//       return user.isVerified;
-//     } catch (error) {
-//       throw error;
-//     }
-//   };
-
-//   getEmailFromToken = (token: string) => {
-//     try {
-//       const decoded = jwt.verify(token, this.secret) as any;
-//       return decoded.email;
-//     } catch (error) {
-//       throw error;
-//     }
-//   };
-
-//   verifyToken = (token: string) => {
-//     try {
-//       const decoded = jwt.verify(token, this.secret) as any;
-//       return decoded;
-//     } catch (error) {
-//       throw error;
-//     }
-//   };
-
-//   createVerificationCode = async (email: string) => {
-//     const verificationCode = Math.floor(100000 + Math.random() * 900000);
-
-//     try {
-//       await prisma.user.update({
-//         where: {
-//           email: email,
-//         },
-//         data: {
-//           verificationCode: verificationCode,
-//         },
-//       });
-
-//       return verificationCode;
-//     } catch (error) {
-//       throw error;
-//     }
-//   };
-
-//   getVerificationCode = async (email: string) => {
-//     try {
-//       const user = await prisma.user.findFirst({
-//         where: {
-//           email: email,
-//         },
-//       });
-
-//       if (!user) {
-//         throw new Error("User not found");
-//       }
-
-//       return user.verificationCode;
-//     } catch (error) {
-//       throw error;
-//     }
-//   };
-
-//   verifyVerificationCode = async (email: string, verificationCode: number) => {
-//     try {
-//       const user = await prisma.user.findFirst({
-//         where: {
-//           email: email,
-//         },
-//       });
-
-//       if (!user) {
-//         throw new Error("User not found");
-//       }
-
-//       if (user.verificationCode === verificationCode) {
-//         await prisma.user.update({
-//           where: {
-//             email: email,
-//           },
-//           data: {
-//             isVerified: true,
-//           },
-//         });
-
-//         return true;
-//       }
-
-//       return false;
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
-// }
-
-// export default new UserService();
-
-export default class UserService {}
+const userService = new UserService();
+export default userService;

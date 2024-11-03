@@ -1,38 +1,42 @@
 import express from "express";
 import genreController from "../controllers/GenreController";
-import HttpStatus from "../config/constants/HttpStatus";
-import ResponseApi from "../config/ResponseApi";
+import {verifyAdmin} from "../middlewares/verifyAdmin";
 
 const router = express.Router();
 
+/**
+ * @route GET /genres
+ * @description Get a list of all genres
+ * @access Public
+ */
 router.get("/", genreController.getGenres);
-router.post("/", genreController.addGenre);
-router.delete("/:id", genreController.deleteGenre);
-router.put("/:id", genreController.updateGenre);
 
+/**
+ * @route GET /genres/:id
+ * @description Get a single genre by ID
+ * @access Public
+ */
+router.get("/:id", genreController.getGenreById);
 
-router.get("/:id", async (req, res) => {
-  (req.params.id);
-  try {
-    const genre = await genreController.getGenreById(parseInt(req.params.id));
-    return res.json(
-      ResponseApi({
-        code: HttpStatus.OK,
-        message: "Genre fetched successfully",
-        data: genre,
-        version: 1.0,
-      })
-    );
-  } catch (error) {
-    return res.json(
-      ResponseApi({
-        code: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: "Failed to fetch genre",
-        errors: error,
-        version: 1.0,
-      })
-    );
-  }
-});
+/**
+ * @route POST /genres
+ * @description Create a new genre
+ * @access Private
+ */
+router.post("/", verifyAdmin, genreController.createGenre);
+
+/**
+ * @route PUT /genres/:id
+ * @description Update a genre by ID
+ * @access Private
+ */
+router.put("/:id", verifyAdmin, genreController.updateGenreById);
+
+/**
+ * @route DELETE /genres/:id
+ * @description Delete a genre by ID
+ * @access Private
+ */
+router.delete("/:id", verifyAdmin, genreController.deleteGenreById);
 
 export default router;
