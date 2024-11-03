@@ -113,6 +113,49 @@ class ReviewService {
             throw new Error(`Could not fetch review with ID ${id}`);
         }
     }
+
+    /**
+     * Creates a new review.
+     * @param {any} reviewData - The data of the review to be created.
+     * @returns {Promise<any>} The newly created review data.
+     * @throws {Error} If there is an issue creating the review.
+     */
+    async createReview(reviewData: any): Promise<any> {
+        try {
+            const {
+                content,
+                rating,
+                movieId,
+                email
+            } = reviewData;
+
+            const user = await prisma.user.findUnique({
+                where: { email }
+            });
+
+            if (!user) {
+                throw new Error("User not found");
+            }
+
+            return await prisma.$transaction(async (prisma) => {
+                const review = await prisma.review.create({
+                    data: {
+                        content,
+                        rating,
+                        movieId,
+                        userId: user.id
+                    },
+                });
+
+                return prisma.review.findUnique({
+                    where: { id: review.id }
+                });
+            });
+        } catch (error) {
+            console.error(error);
+            throw new Error("Could not create review");
+        }
+    }
 }
 
 const reviewService = new ReviewService();

@@ -116,7 +116,7 @@ class MovieService {
 
       const user = await prisma.user.findUnique({
         where: { email },
-        select: { role: true },
+        select: { role: true, id: true },
       });
 
       if (!user) {
@@ -126,6 +126,9 @@ class MovieService {
       let approvalStatus: boolean;
 
       approvalStatus = user.role == "admin";
+
+      const userId = user.id;
+
       const newMovie = await prisma.$transaction(async (prisma) => {
         const movie = await prisma.movie.create({
           data: {
@@ -137,6 +140,7 @@ class MovieService {
             rating: parseFloat(rating),
             backdropUrl,
             videoUrl,
+            addedBy: { connect: { id: userId } },
             country: { connect: { code: countryCode } },
             director: { connect: { id: directorId } },
             genres: {
