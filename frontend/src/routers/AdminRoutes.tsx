@@ -8,11 +8,13 @@ import AdminCountryPage from "../views/admin/pages/AdminCountryPage";
 import AdminAwardPage from "../views/admin/pages/AdminAwardPage";
 import AdminDirectorPage from "../views/admin/pages/AdminDirectorPage";
 import AdminUserPage from "../views/admin/pages/AdminUserPage";
+import AdminDashboardPage from "../views/admin/pages/AdminDashboardPage";
 
 export default function AdminRoutes() {
   return (
     <Routes>
       <Route path="/" element={<AdminMoviePage />} />
+      <Route path={menu.dashboard.path} element={<AdminDashboardPage />} />
       <Route path={menu.movies.path} element={<AdminMoviePage />} />
       <Route path={menu.actors.path} element={<AdminActorPage />} />
       <Route path={menu.genres.path} element={<AdminGenrePage />} />
