@@ -129,6 +129,10 @@ class MovieService {
 
       const userId = user.id;
 
+      if (!title || !synopsis || !posterUrl || !releaseDate || !backdropUrl || !videoUrl || !countryCode || !directorId || !genres || !actors) {
+        throw new Error("Missing required fields");
+      }
+
       const newMovie = await prisma.$transaction(async (prisma) => {
         const movie = await prisma.movie.create({
           data: {
