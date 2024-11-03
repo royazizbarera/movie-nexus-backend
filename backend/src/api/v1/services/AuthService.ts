@@ -88,6 +88,10 @@ class AuthService {
         throw new Error("User with this email does not exist");
       }
 
+      if (user.isSuspended) {
+        throw new Error("User is suspended");
+      }
+
       // bandingkan password
       const isPasswordMatch = await bcrypt.compare(password, user.password!);
       if (!isPasswordMatch) {
@@ -275,9 +279,15 @@ class AuthService {
           },
         });
 
+
+
         const userResponse = { ...newUser, password: undefined };
 
         return userResponse;
+      }
+
+      if (user.isSuspended) {
+        throw new Error("User is suspended");
       }
 
       // hilangkan password

@@ -14,12 +14,12 @@ class UserService {
             if (userIds) {
                 return prisma.user.count({
                     where: {
-                        id: { in: userIds },
+                        id: {in: userIds},
                         ...whereClause,
                     },
                 });
             }
-            return prisma.user.count({ where: whereClause });
+            return prisma.user.count({where: whereClause});
         } catch (error) {
             console.error("Error counting users:", error);
             throw new Error("Could not count users");
@@ -36,17 +36,17 @@ class UserService {
      * @throws {Error} If there is an issue fetching the users.
      */
     async getUsers({
-                        page = 1,
-                        pageSize = 24,
-                        params,
-                    }: {
+                       page = 1,
+                       pageSize = 24,
+                       params,
+                   }: {
         page: number | undefined;
         pageSize: number | undefined;
         params: SearchParams;
     }): Promise<any[]> {
         const skip = (page - 1) * pageSize;
-        const { searchTerm, sortBy, sortOrder } = params;
-        const whereClause: any = { AND: [] };
+        const {searchTerm, sortBy, sortOrder} = params;
+        const whereClause: any = {AND: []};
 
         if (whereClause.AND.length === 0) {
             delete whereClause.AND;
@@ -77,7 +77,7 @@ class UserService {
                         isVerified: true
                     },
                     where: {
-                        id: { in: userIds },
+                        id: {in: userIds},
                         ...whereClause,
                     },
                     skip,
@@ -95,7 +95,7 @@ class UserService {
                         isVerified: true
                     },
                     where: whereClause,
-                    orderBy: sortBy ? { [sortBy]: sortOrder || "asc" } : undefined,
+                    orderBy: sortBy ? {[sortBy]: sortOrder || "asc"} : undefined,
                     skip,
                     take: pageSize,
                 });
@@ -105,6 +105,52 @@ class UserService {
             return [users, totalItems];
         } catch (error) {
             throw new Error("Error fetching users");
+        }
+    }
+
+    /**
+     * Suspends a user by setting their isSuspended flag to true.
+     * @param {number} userId - The ID of the user to suspend.
+     * @returns {Promise<void>} A promise that resolves when the user is suspended.
+     * @throws {Error} If there is an issue suspending the user.
+     */
+    async suspendUser(userId: number): Promise<void> {
+        try {
+            const user = await prisma.user.findFirst({
+                where: {id: userId},
+            });
+
+            if (!user) {
+                throw new Error("User not found");
+            }
+
+            if (user.role === "admin") {
+                throw new Error("Cannot suspend an admin");
+            }
+
+            await prisma.user.update({
+                where: {id: userId},
+                data: {isSuspended: true},
+            });
+        } catch (error) {
+            throw new Error("Error suspending user:" + error);
+        }
+    }
+
+    /**
+     * Unsuspends a user by setting their isSuspended flag to false.
+     * @param {number} userId - The ID of the user to unsuspend.
+     * @returns {Promise<void>} A promise that resolves when the user is unsuspended.
+     * @throws {Error} If there is an issue unsuspending the user.
+     */
+    async unsuspendUser(userId: number): Promise<void> {
+        try {
+            await prisma.user.update({
+                where: {id: userId},
+                data: {isSuspended: false},
+            });
+        } catch (error) {
+            throw new Error("Error unsuspending user:" + error);
         }
     }
 }
