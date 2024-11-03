@@ -120,8 +120,6 @@ export default async function insertDummyData() {
         await prisma.$executeRawUnsafe(`ALTER SEQUENCE "Genre_id_seq" RESTART WITH ${maxGenreId + 1}`);
 
         const maxAwardId = Math.max(...awards.map((award) => award.id));
-        console.log(maxAwardId);
-        console.log("UwU");
         await prisma.$executeRawUnsafe(`ALTER SEQUENCE "Award_id_seq" RESTART WITH ${maxAwardId + 1}`);
 
         const maxUserId = Math.max(...users.map((user) => user.id));

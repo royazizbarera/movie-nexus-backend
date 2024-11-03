@@ -138,7 +138,6 @@ class CountryController {
                 })
             );
         } catch (error) {
-            console.error("Error creating country: ", error);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
                 ResponseApi({
                     code: HttpStatus.INTERNAL_SERVER_ERROR,

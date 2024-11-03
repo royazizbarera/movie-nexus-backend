@@ -69,7 +69,7 @@ class ActorService {
                 const searchQuery = `
                 SELECT id
                 FROM "Actor"
-                WHERE SIMILARITY("name", $1) > 0.01
+                WHERE SIMILARITY("name", $1) > 0.1
                 ORDER BY SIMILARITY("name", $1) DESC
                 LIMIT $2 OFFSET $3;
             `;

@@ -151,7 +151,6 @@ class CountryService {
     async updateCountryByCode(code: string, updatedData: any): Promise<any> {
         try {
             const dataToUpdate: any = {
-                ...(updatedData.code ? { code: updatedData.code } : {}),
                 ...(updatedData.name ? { name: updatedData.name } : {}),
             };
 
