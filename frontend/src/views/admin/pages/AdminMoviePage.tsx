@@ -243,6 +243,7 @@ export default function AdminMoviePage() {
 
   React.useEffect(() => {
     fetchMovies(movieParams); // Pass current page to fetchMovies
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movieParams]);
 
   // TODO: ADD Movie

@@ -29,7 +29,7 @@ class ReviewController extends BaseController {
 
   // Menambah film baru
   public async addReview(newReview: ReviewModel) {
-    return this.post<string>("/", { ...newReview });
+    return this.post<string>("/", { ...newReview, id: undefined });
   }
 
   // Mengubah data film, hanya untuk admin

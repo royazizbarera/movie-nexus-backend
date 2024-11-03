@@ -14,6 +14,7 @@ class ReviewController {
      */
     async getReviews(req: Request, res: Response): Promise<Response> {
         try {
+            // TODO: Add filter by movieId
             const {
                 page = "1",
                 pageSize = "10",
@@ -22,6 +23,7 @@ class ReviewController {
                 userId = '',
                 sortBy = '',
                 sortOrder = 'asc',
+                movieId = '',
             } = req.query;
 
             const parsedPage = parseInt(page as string, 10) || 1;
@@ -36,6 +38,7 @@ class ReviewController {
                     userId: parseInt(userId as string, 10),
                     sortBy: sortBy as string,
                     sortOrder: sortOrder as "asc" | "desc",
+                    movieId: parseInt(movieId as string, 10),
                 },
             });
 

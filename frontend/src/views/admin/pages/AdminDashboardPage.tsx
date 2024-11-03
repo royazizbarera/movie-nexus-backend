@@ -6,8 +6,6 @@ import {
   Typography,
   Card,
   CardContent,
-  CircularProgress,
-  SvgIcon,
   Button,
   CardActions,
   Grid,
@@ -20,20 +18,13 @@ import BreadcrumbsDashboard from "../components/BreadcrumbsDashboard";
 import React from "react";
 
 // Icon
-import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
-import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import MovieRoundedIcon from "@mui/icons-material/MovieRounded";
-import SupportRoundedIcon from "@mui/icons-material/SupportRounded";
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
 import SportsMartialArtsRoundedIcon from "@mui/icons-material/SportsMartialArtsRounded";
 import PublicRoundedIcon from "@mui/icons-material/PublicRounded";
 import EmojiEventsRoundedIcon from "@mui/icons-material/EmojiEventsRounded";
 import AutoAwesomeMotionRoundedIcon from "@mui/icons-material/AutoAwesomeMotionRounded";
 import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
-import HailRoundedIcon from "@mui/icons-material/HailRounded";
 import AccountCircleRoundedIcon from "@mui/icons-material/AccountCircleRounded";
 import RateReviewRoundedIcon from "@mui/icons-material/RateReviewRounded";
 

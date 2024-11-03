@@ -5,6 +5,7 @@ import { verifyAdmin } from "../middlewares/verifyAdmin";
 
 const router = express.Router();
 
+// TODO: Harus bisa memisahkan approved dan unapproved reviews ke writer/guest
 /**
  * @route GET /reviews
  * @description Get a list of all reviews

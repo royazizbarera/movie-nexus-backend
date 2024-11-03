@@ -7,7 +7,7 @@ export interface ReviewModel {
   content: string;
   rating: number;
   approvalStatus?: boolean;
-  email: string;
+  // email: string;
 }
 
 export interface ReviewModelTable {
@@ -16,7 +16,7 @@ export interface ReviewModelTable {
   rating: number;
   movieId: number;
   userId?: number;
-  email: string;
+  // email: string;
   approvalStatus?: boolean;
 }
 
@@ -34,7 +34,7 @@ export function convertReviewModelToTable(review: ReviewModel): ReviewModelTable
     rating: Number(review.rating),
     movieId: review.movieId,
     userId: review.userId || 0,
-    email: review.email,
+    // email: review.email,
     approvalStatus: review.approvalStatus || false,
   };
 }
@@ -46,7 +46,7 @@ export function convertReviewTableToModel(review: ReviewModelTable): ReviewModel
     rating: Number(review.rating),
     movieId: review.movieId,
     userId: review.userId,
-    email: review.email,
+    // email: review.email,
     approvalStatus: review.approvalStatus || false,
   };
 }

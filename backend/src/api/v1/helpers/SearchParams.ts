@@ -12,4 +12,5 @@ export default interface SearchParams {
     rating?: number;
     userId?: number;
     approvalStatus?: boolean;
+    movieId?: number;
 }

@@ -46,12 +46,25 @@ class ReviewService {
     params: SearchParams;
   }): Promise<any[]> {
     const skip = (page - 1) * pageSize;
-    const { searchTerm, rating, userId, sortBy, sortOrder, approvalStatus } =
-      params;
+    const {
+      searchTerm,
+      rating,
+      userId,
+      sortBy,
+      sortOrder,
+      approvalStatus,
+      movieId,
+    } = params;
     const whereClause: any = { AND: [] };
 
     if (rating) addRatingFilter(whereClause, rating);
     if (userId) addUserIdFilter(whereClause, userId);
+    // TODO: Refactor this
+    if (movieId) {
+      whereClause.AND.push({
+        movieId,
+      });
+    }
 
     if (approvalStatus !== undefined) {
       whereClause.AND.push({
@@ -182,7 +195,7 @@ class ReviewService {
    */
   async updateReviewById(id: number, updatedData: any): Promise<any> {
     try {
-      console.log("Updated data: ",updatedData);
+      console.log("Updated data: ", updatedData);
       const dataToUpdate: any = {
         ...(updatedData.content ? { content: updatedData.cotent } : {}),
         ...(updatedData.rating ? { rating: updatedData.rating } : {}),
@@ -190,7 +203,7 @@ class ReviewService {
           ? { approvalStatus: updatedData.approvalStatus }
           : {}),
       };
-      console.log("Data to Update",dataToUpdate);
+      console.log("Data to Update", dataToUpdate);
       return await prisma.review.update({
         where: { id },
         data: dataToUpdate,

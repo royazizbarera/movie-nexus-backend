@@ -11,15 +11,6 @@ import {
   FormLabel,
   Input,
   Autocomplete,
-  DialogTitle,
-  Divider,
-  DialogContent,
-  DialogActions,
-  Grid,
-  Accordion,
-  AccordionGroup,
-  AccordionSummary,
-  AccordionDetails,
   Snackbar,
 } from "@mui/joy";
 import React from "react";
@@ -27,10 +18,7 @@ import { MovieModel, MovieModelTable } from "../../../models/MovieModel";
 import { SnackbarState } from "./SnackbarState";
 
 // icon
-import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
-import DeleteForeverRoundedIcon from "@mui/icons-material/DeleteForeverRounded";
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
-import FilterAltRoundedIcon from "@mui/icons-material/FilterAltRounded";
+
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import DangerousOutlinedIcon from "@mui/icons-material/DangerousOutlined";
@@ -43,7 +31,6 @@ import { AwardModel } from "../../../models/AwardModel";
 import genreController from "../../../controllers/GenreController";
 import actorController from "../../../controllers/ActorController";
 import awardController from "../../../controllers/AwardController";
-import { count } from "console";
 import countryController from "../../../controllers/CountryController";
 import directorController from "../../../controllers/DirectorController";
 import movieController from "../../../controllers/MovieController";
