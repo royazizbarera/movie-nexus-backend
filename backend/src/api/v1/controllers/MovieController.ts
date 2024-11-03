@@ -100,7 +100,7 @@ class MovieController {
                 );
             }
 
-            let filtered = {...filters, approved: false};
+            let filtered = {...filters, approvalStatus: false};
 
             const [movies, totalItems] = await movieService.getMovies({
                 page: parsedPage,

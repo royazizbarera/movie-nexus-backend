@@ -3,16 +3,16 @@ import { Box, Button, Chip, Divider, Grid, Typography, List } from "@mui/joy";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import AddCommentIcon from "@mui/icons-material/AddComment";
-import MainLayout from "../../layouts/MainLayout";
-import ContentLayout from "../../layouts/ContentLayout";
-import BackgroundTrailer from "../../components/movies/BackgroundTrailer";
-import VideoTrailer from "../../components/movies/VideoTrailer";
-import ActorCard from "../../components/ActorCard";
+import MainLayout from "../layouts/MainLayout";
+import ContentLayout from "../layouts/ContentLayout";
+import BackgroundTrailer from "./movies/BackgroundTrailer";
+import VideoTrailer from "./movies/VideoTrailer";
+import ActorCard from "./ActorCard";
 import React from "react";
-import { MovieModel } from "../../../models/MovieModel";
-import { GenreModel } from "../../../models/GenreModel";
-import { ActorModel } from "../../../models/ActorModel";
-import { DirectorModel } from "../../../models/DirectorModel";
+import { MovieModel } from "../../models/MovieModel";
+import { GenreModel } from "../../models/GenreModel";
+import { ActorModel } from "../../models/ActorModel";
+import { DirectorModel } from "../../models/DirectorModel";
 
 interface DetailMovieComponentProps {
   movie: MovieModel;
@@ -209,6 +209,7 @@ export default function DetailMovieComponent({
             {actors?.map((actor: any, index: number) => (
               <ActorCard
                 key={index}
+                id={actor.id}
                 name={actor.name}
                 photoUrl={actor.photoUrl}
               />

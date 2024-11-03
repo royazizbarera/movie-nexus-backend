@@ -1,7 +1,4 @@
-import {
-  Grid,
-  Typography,
-} from "@mui/joy";
+import { Grid, Typography } from "@mui/joy";
 import ContentLayout from "../layouts/ContentLayout";
 
 // icon
@@ -13,7 +10,7 @@ import { useParams } from "react-router-dom";
 // import getTrailerMovie from "../../helpers/getTrailerMovie";
 import AppAppBar from "../components/AppAppBar";
 import movieController from "../../controllers/MovieController";
-import DetailMovieComponent from "../admin/components/DetailMovieComponent";
+import DetailMovieComponent from "../components/DetailMovieComponent";
 
 export default function DetailMovie() {
   const { id } = useParams();

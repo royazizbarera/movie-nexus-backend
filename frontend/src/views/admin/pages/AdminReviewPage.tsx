@@ -13,25 +13,19 @@ import BreadcrumbsHome from "../components/BreadcrumbsHome";
 import BreadcrumbsDashboard from "../components/BreadcrumbsDashboard";
 import { AdminTableLayout } from "../layouts/AdminTableLayout";
 import GenericTable from "../components/GenericTable";
-import genreController from "../../../controllers/GenreController";
+import reviewController from "../../../controllers/ReviewController";
 import {
-  GenreModel,
-  GenreModelTable,
-  GenreParamsModel,
-} from "../../../models/GenreModel";
+  convertReviewModelToTable,
+  ReviewModel,
+  ReviewModelTable,
+  ReviewParamsModel,
+} from "../../../models/ReviewModel";
 import { PaginationModel } from "../../../models/PaginationModel";
 import {
   PAGE_SIZE_DROPDOWN,
   SORT_ORDER_DROPDOWN,
 } from "../../../configs/constants";
 import { HttpStatusCode } from "axios";
-
-function convertGenreModelToTable(genre: GenreModel): GenreModelTable {
-  return {
-    id: genre.id,
-    name: genre.name,
-  };
-}
 
 const columns: any[] = [
   {
@@ -41,100 +35,129 @@ const columns: any[] = [
     readonly: true,
     width: 70,
   },
-  { key: "name", label: "Genre", type: "string", width: "100%" },
+  {
+    key: "content",
+    label: "Content",
+    type: "string",
+    width: 300,
+  },
+  {
+    key: "approvalStatus",
+    label: "Approval Status",
+    type: "boolean",
+  },
+  {
+    key: "rating",
+    label: "Rating",
+    type: "number",
+    width: 100,
+  },
+  {
+    key: "movieId",
+    label: "Movie ID",
+    type: "number",
+    width: 100,
+  },
+  {
+    key: "userId",
+    label: "User ID",
+    type: "number",
+    width: 100,
+  },
 ];
 
-export default function AdminGenrePage() {
-  const [genres, setGenres] = React.useState<GenreModelTable[]>([]);
+export default function AdminReviewPage() {
+  const [reviews, setReviews] = React.useState<ReviewModelTable[]>([]);
   const [pagination, setPagination] = React.useState<PaginationModel>({
     page: 1,
     pageSize: 24,
     totalItems: 0,
     totalPages: 1,
   });
-  const [genreParams, setGenreParams] = React.useState<GenreParamsModel>({
+  const [reviewParams, setReviewParams] = React.useState<ReviewParamsModel>({
     page: pagination.page,
     pageSize: pagination.pageSize,
   });
 
   React.useEffect(() => {
-    fetchGenres(genreParams); // Pass current page to fetchGenres
-  }, [genreParams]);
+    fetchReviews(reviewParams); // Pass current page to fetchReviews
+  }, [reviewParams]);
 
-  // TODO (DONE): Genre CRUD operations
-  const fetchGenres = async (genreParamsModel: GenreParamsModel) => {
+  // TODO (DONE): Review CRUD operations
+  const fetchReviews = async (reviewParamsModel: ReviewParamsModel) => {
     try {
-      const response = await genreController.getGenres(genreParamsModel);
-      const { data: genres, pagination } = response;
+      const response = await reviewController.getReviews(reviewParamsModel);
+      const { data: reviews, pagination } = response;
 
-      setGenres(genres.map(convertGenreModelToTable));
+      setReviews(reviews.map(convertReviewModelToTable));
       setPagination(pagination!);
     } catch (error) {
-      console.error("Error fetching genres:", error);
+      console.error("Error fetching reviews:", error);
     }
   };
 
-  // TODO (DONE): ADD Genre
-  const handleAddGenre = async (newGenre: GenreModelTable) => {
+  // TODO (DONE): ADD Review
+  const handleAddReview = async (newReview: ReviewModelTable) => {
     try {
-      const response = await genreController.addGenre(newGenre.name);
+      const parsedReview: ReviewModel = convertReviewModelToTable(newReview);
+      const response = await reviewController.addReview(
+        parsedReview
+      );
       if (
         response.code === HttpStatusCode.Created ||
         response.code === HttpStatusCode.Ok
       ) {
-        fetchGenres(genreParams);
-        console.log("Genre added successfully:", response.message);
-        console.info("add genre: ", newGenre);
+        fetchReviews(reviewParams);
+        console.log("Review added successfully:", response.message);
+        console.info("add review: ", newReview);
         return true;
       } else {
-        console.error("Error adding genre:", response.message);
+        console.error("Error adding review:", response.message);
         return false;
       }
     } catch (error) {
-      console.error("Error adding genre:", error);
+      console.error("Error adding review:", error);
       return false;
     }
   };
 
-  // TODO (DONE): EDIT Genre
-  const handleEditGenre = async (updatedGenre: GenreModelTable) => {
+  // TODO (DONE): EDIT Review
+  const handleEditReview = async (updatedReview: ReviewModelTable) => {
     try {
-      // Kirim data yang telah diubah ke endpoint tertentu
-      // const response = await axios.put(`http://localhost:3001/genre/${updatedGenre.id}`, updatedGenre);
-      // console.log('Genre updated successfully:', response.data);
-      const response = await genreController.updateGenre(
-        updatedGenre.id,
-        updatedGenre.name
+      const parsedReview: ReviewModel = convertReviewModelToTable(updatedReview);
+      const response = await reviewController.updateReview(
+        updatedReview.id,
+        parsedReview
       );
       if (response.code !== HttpStatusCode.Ok) {
-        console.error("Error updating genre:", response.message);
+        console.error("Error updating review:", response.message);
         return false;
       }
-      fetchGenres(genreParams);
-      console.log("Genre updated successfully:", response.message);
-      console.info("update genre: ", updatedGenre);
+      fetchReviews(reviewParams);
+      console.log("Review updated successfully:", response.message);
+      console.info("update review: ", updatedReview);
       return true;
     } catch (error) {
-      console.error("Error updating genre:", error);
+      console.error("Error updating review:", error);
       return false;
     }
   };
 
-  // TODO (DONE): DELETE Genre
-  const handleDeleteGenre = async (genre: GenreModelTable) => {
+  // TODO (DONE): DELETE Review
+  const handleDeleteReview = async (review: ReviewModelTable) => {
     try {
-      const response = await genreController.deleteGenre(genre.id);
+      const response = await reviewController.deleteReview(review.id);
       if (response.code === HttpStatusCode.Ok) {
-        fetchGenres(genreParams);
-        console.log("Genre deleted successfully:", response.message);
-        console.info("delete genre: ", genre);
+        fetchReviews(reviewParams);
+        console.log("Review deleted successfully:", response.message);
+        console.info("delete review: ", review);
         return true;
       } else {
-        console.error("Error deleting genre:", response.message);
+        console.error("Error deleting review:", response.message);
         return false;
       }
     } catch (error) {
-      console.error("Error deleting genre:", error);
+      console.error("Error deleting review:", error);
       return false;
     }
   };
@@ -144,7 +167,7 @@ export default function AdminGenrePage() {
   };
 
   const handleFilterChange = (name: string, value: string | number) => {
-    setGenreParams((prevParams) => ({
+    setReviewParams((prevParams) => ({
       ...prevParams,
       [name]: value,
     }));
@@ -156,7 +179,7 @@ export default function AdminGenrePage() {
       <CssBaseline />
       <Box sx={{ display: "flex", minHeight: "100dvh" }}>
         <Header />
-        <Sidebar selected="genres" />
+        <Sidebar selected="reviews" />
         <AdminTableLayout>
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <Breadcrumbs
@@ -171,19 +194,18 @@ export default function AdminGenrePage() {
                 color="primary"
                 sx={{ fontWeight: 500, fontSize: 12 }}
               >
-                Genres
+                Reviews
               </Typography>
             </Breadcrumbs>
           </Box>
 
-          <GenericTable<GenreModelTable>
-            simpleAddItem
-            title="Genres"
-            data={genres}
+          <GenericTable<ReviewModelTable>
+            title="Reviews"
+            data={reviews}
             columns={columns}
-            onAdd={handleAddGenre}
-            onEdit={handleEditGenre}
-            onDelete={handleDeleteGenre}
+            onAdd={handleAddReview}
+            onEdit={handleEditReview}
+            onDelete={handleDeleteReview}
             onPageChange={handlePageChange}
             page={pagination.page}
             pageSize={pagination.pageSize}
@@ -197,7 +219,7 @@ export default function AdminGenrePage() {
             onFilterChange={handleFilterChange}
             applySearch
             realtimeSearch
-            placeholderSearch="Search genre..."
+            placeholderSearch="Search review..."
             onSearchApply={(searchTerm) =>
               handleFilterChange("searchTerm", searchTerm)
             }

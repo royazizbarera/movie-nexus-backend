@@ -7,6 +7,8 @@ import SignInPage from "../views/pages/SignInPage";
 import SignUpPage from "../views/pages/SignUpPage";
 import ProtectedRoute from "./ProtectedRoutes";
 import VerifyEmailPage from "../views/pages/VerifyEmailPage";
+import ActorsPage from "../views/pages/ActorsPage";
+import DetailActor from "../views/pages/DetailActor";
 
 export default function ClientRoutes() {
   return (
@@ -14,6 +16,8 @@ export default function ClientRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/movies" element={<MoviesPage />} />
       <Route path="/movie/:id" element={<DetailMovie />} />
+      <Route path="/actors" element={<ActorsPage />} />
+      <Route path="/actors/:id" element={<DetailActor />} />
 
       <Route
         path="/sign-in"

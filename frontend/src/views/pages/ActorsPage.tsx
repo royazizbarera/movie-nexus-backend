@@ -2,28 +2,20 @@ import React from "react";
 
 import { Box, Grid, Button, Input, Autocomplete, FormControl } from "@mui/joy";
 import MainLayout from "../layouts/MainLayout";
-import MovieCard from "../components/MovieCard";
+import ActorCard from "../components/ActorCard";
 
 import AppAppBar from "../components/AppAppBar";
-import { MovieModel, MovieParamsModel } from "../../models/MovieModel";
-import { PaginationModel } from "../../models/PaginationModel";
-import movieController from "../../controllers/MovieController";
-import genreController from "../../controllers/GenreController";
 import actorController from "../../controllers/ActorController";
-import { GenreModel } from "../../models/GenreModel";
-import { ActorModel } from "../../models/ActorModel";
-import awardController from "../../controllers/AwardController";
-import { AwardModel } from "../../models/AwardModel";
-import countryController from "../../controllers/CountryController";
-import { CountryModel } from "../../models/CountryModel";
-import PaginationComponent from "../admin/components/PaginationComponent";
+import { ActorModel, ActorParamsModel } from "../../models/ActorModel";
 import getYearsFromXtoY from "../../helpers/getYearsFromXtoY";
 import {
   PAGE_SIZE_DROPDOWN,
   SORT_ORDER_DROPDOWN,
 } from "../../configs/constants";
-import CreateMovieWritter from "../admin/components/CreateMovieWritter";
-import { useAuthStore } from "../../contexts/authStore";
+import { PaginationModel } from "../../models/PaginationModel";
+import genreController from "../../controllers/GenreController";
+import { GenreModel } from "../../models/GenreModel";
+import PaginationComponent from "../admin/components/PaginationComponent";
 
 const styleSelect = {
   width: "100%",
@@ -35,9 +27,8 @@ const styleSelect = {
   },
 };
 
-export default function MoviesPage() {
-  const { user } = useAuthStore();
-  const [movies, setMovies] = React.useState<MovieModel[]>([]);
+export default function ActorsPage() {
+  const [actors, setActors] = React.useState<ActorModel[]>([]);
   const [pagination, setPagination] = React.useState<PaginationModel>({
     page: 1,
     pageSize: 24,
@@ -45,16 +36,12 @@ export default function MoviesPage() {
     totalPages: 1,
   });
 
-  const [movieParams, setMovieParams] = React.useState<MovieParamsModel>({
+  const [actorParams, setActorParams] = React.useState<ActorParamsModel>({
     page: pagination.page,
     pageSize: pagination.pageSize,
   });
 
   const [genres, setGenres] = React.useState<string[]>([]);
-  const [actors, setActors] = React.useState<string[]>([]);
-  // const [actors, setActors] = React.useState<string[]>(["Actor 1", "Actor2", "Actor3"]);
-  const [awards, setAwards] = React.useState<string[]>([]);
-  const [countries, setCountries] = React.useState<string[]>([]);
 
   const filters = [
     {
@@ -63,29 +50,9 @@ export default function MoviesPage() {
       options: genres,
     },
     {
-      name: "actor",
-      placeholder: "Actor",
-      options: actors,
-    },
-    {
-      name: "award",
-      placeholder: "Award",
-      options: awards,
-    },
-    {
-      name: "country",
-      placeholder: "Country",
-      options: countries,
-    },
-    {
       name: "year",
       placeholder: "Year",
       options: getYearsFromXtoY(1950, new Date().getFullYear()),
-    },
-    {
-      name: "rating",
-      placeholder: "Rating",
-      options: ["1", "2", "3", "4", "5"],
     },
     {
       name: "sortBy",
@@ -112,24 +79,14 @@ export default function MoviesPage() {
     },
   ];
 
-  const [openAddModal, setOpenAddModal] = React.useState(false);
-  const handleOpenAddModal = () => {
-    setOpenAddModal(true);
-  };
-
-  const handleCloseAddModal = () => {
-    fetchMovies(movieParams); // Fetch movies after adding new item
-    setOpenAddModal(false); // Hanya tutup modal tanpa reset newItem
-  };
-
-  const fetchMovies = async (movieParamsModel?: MovieParamsModel) => {
+  const fetchActors = async (actorParamsModel?: ActorParamsModel) => {
     try {
-      const response = await movieController.getMovies(movieParamsModel);
-      const { data: movies, pagination } = response;
-      setMovies(movies);
+      const response = await actorController.getActors(actorParamsModel);
+      const { data: actors, pagination } = response;
+      setActors(actors);
       setPagination(pagination!);
     } catch (error) {
-      console.error("Error fetching movies:", error);
+      console.error("Error fetching actors:", error);
     }
   };
 
@@ -145,61 +102,20 @@ export default function MoviesPage() {
     } catch (error) {}
   };
 
-  const getActors = async () => {
-    try {
-      const response = await actorController.getActors();
-      const data = response.data;
-      setActors(
-        data.map((actor: ActorModel) => {
-          return actor.name;
-        })
-      );
-    } catch (error) {
-      console.error("Error fetching directors:", error);
-    }
-  };
-
-  const getAward = async () => {
-    try {
-      const response = await awardController.getAwards();
-      const data = response.data;
-      setAwards(
-        data.map((award: AwardModel) => {
-          return award.name;
-        })
-      );
-    } catch (error) {}
-  };
-
-  const getCountries = async () => {
-    try {
-      const response = await countryController.getCountries();
-      const data = response.data;
-      setCountries(
-        data.map((country: CountryModel) => {
-          return country.name;
-        })
-      );
-    } catch (error) {}
-  };
-
   React.useEffect(() => {
     getGenres();
-    getActors();
-    getAward();
-    getCountries();
   }, []);
 
   React.useEffect(() => {
-    fetchMovies(movieParams); // Pass current page to fetchMovies
-  }, [movieParams]);
+    fetchActors(actorParams); // Pass current page to fetchActors
+  }, [actorParams]);
 
   const handlePageChange = async (newPage: number) => {
     handleFilterChange("page", newPage);
   };
 
   const handleFilterChange = (name: string, value: string | number) => {
-    setMovieParams((prevParams) => ({
+    setActorParams((prevParams) => ({
       ...prevParams,
       [name]: value,
     }));
@@ -210,21 +126,6 @@ export default function MoviesPage() {
     <>
       <AppAppBar />
       <MainLayout giveSpace pt={14}>
-        {/* Button add movie if role writer or admin */}
-        {
-          user?.role === "admin" || user?.role === "writer" ? (
-            <Button
-              variant="soft"
-              color="primary"
-              sx={{ mb: 4 }}
-              onClick={() => {
-                handleOpenAddModal();
-              }}
-            >
-              Add Movie
-            </Button>
-          ) : null
-        }
         {/* Toolbar Filtering */}
         <Box sx={{ mb: 4, display: "flex", flexDirection: "column" }}>
           {/* Filter Dropdowns */}
@@ -283,7 +184,7 @@ export default function MoviesPage() {
                 sx={{ display: "flex", justifyContent: "center", pl: 0 }}
               >
                 <FormControl key={"searchTerm"} sx={{ width: "100%", mt: 2 }}>
-                  <Input name="searchTerm" placeholder={"Search movies..."} />
+                  <Input name="searchTerm" placeholder={"Search actors..."} />
                 </FormControl>
               </Grid>
               <Grid
@@ -302,14 +203,14 @@ export default function MoviesPage() {
           </form>
         </Box>
 
-        {/* Movies */}
+        {/* Actors */}
         <Box>
           <Grid
             container
             spacing={{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2 }}
             sx={{ flexGrow: 1, justifyContent: "left" }}
           >
-            {movies.map((movie: any, index: number) => (
+            {actors.map((actor: any, index: number) => (
               <Grid
                 xs={6}
                 sm={4}
@@ -321,13 +222,11 @@ export default function MoviesPage() {
                   justifyContent: "center",
                 }}
               >
-                <MovieCard
+                <ActorCard
                   key={index}
-                  id={movie.id}
-                  title={movie.title}
-                  posterUrl={movie.posterUrl}
-                  rating={movie.rating}
-                  year={movie.releaseDate}
+                  id={actor.id}
+                  name={actor.name}
+                  photoUrl={actor.photoUrl}
                 />
               </Grid>
             ))}
@@ -342,11 +241,6 @@ export default function MoviesPage() {
           handlePageChange={handlePageChange}
           handleNextPage={() => handlePageChange((pagination.page || 1) + 1)}
           handlePrevPage={() => handlePageChange(pagination.page - 1)}
-        />
-
-        <CreateMovieWritter
-          openAddModal={openAddModal}
-          handleCloseAddModal={handleCloseAddModal}
         />
       </MainLayout>
     </>

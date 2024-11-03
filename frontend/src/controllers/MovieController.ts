@@ -16,6 +16,14 @@ class MovieController extends BaseController {
     return this.get<MovieModel[]>("/", params);
   }
 
+  // get unapproved movies
+  public async getUnapprovedMovies(
+    movieFilterParamsModel?: MovieParamsModel | undefined
+  ) {
+    const params = { ...movieFilterParamsModel };
+    return this.get<MovieModel[]>("/unapproved", params);
+  }
+
   // Mendapatkan detail film berdasarkan ID
   public async getMovieById(id: number) {
     return this.get<MovieModel>(`/${id}`);

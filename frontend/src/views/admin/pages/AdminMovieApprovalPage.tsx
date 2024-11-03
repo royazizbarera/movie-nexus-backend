@@ -52,6 +52,11 @@ const columns: Column<MovieModelTable>[] = [
     width: 70,
   },
   {
+    key: "approvalStatus",
+    label: "Approval Status",
+    type: "boolean",
+  },
+  {
     key: "addedBy",
     label: "Uploaded By",
     type: "string_autocomplete",
@@ -63,11 +68,6 @@ const columns: Column<MovieModelTable>[] = [
   { key: "backdropUrl", label: "Backdrop", type: "string" },
   { key: "videoUrl", label: "Video", type: "string" },
   { key: "releaseDate", label: "Release Date", type: "date" },
-  {
-    key: "approvalStatus",
-    label: "Approval Status",
-    type: "boolean",
-  },
   { key: "rating", label: "Rating", type: "number", readonly: true },
   { key: "country", label: "Country", type: "string_autocomplete" },
   {
@@ -81,7 +81,7 @@ const columns: Column<MovieModelTable>[] = [
   { key: "reviews", label: "Reviews", type: "string[]" },
 ];
 
-export default function AdminMoviePage() {
+export default function AdminMovieApprovalPage() {
   const { user } = useAuthStore();
 
   const [realMovies, setRealMovies] = React.useState<MovieModel[]>([]);
@@ -131,7 +131,7 @@ export default function AdminMoviePage() {
 
   const fetchMovies = async (movieParamsModel?: MovieParamsModel) => {
     try {
-      const response = await movieController.getMovies(movieParamsModel);
+      const response = await movieController.getUnapprovedMovies(movieParamsModel);
       const { data: movies, pagination } = response;
       setRealMovies(movies);
       setMovies(
@@ -243,6 +243,7 @@ export default function AdminMoviePage() {
 
   React.useEffect(() => {
     fetchMovies(movieParams); // Pass current page to fetchMovies
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movieParams]);
 
   // TODO: ADD Movie
@@ -385,7 +386,7 @@ export default function AdminMoviePage() {
       <CssBaseline />
       <Box sx={{ display: "flex", minHeight: "100dvh" }}>
         <Header />
-        <Sidebar selected="movies" />
+        <Sidebar selected="movies-approval" />
         <AdminTableLayout>
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <Breadcrumbs
@@ -400,12 +401,12 @@ export default function AdminMoviePage() {
                 color="primary"
                 sx={{ fontWeight: 500, fontSize: 12 }}
               >
-                Movies
+                Movies Approval
               </Typography>
             </Breadcrumbs>
           </Box>
           <GenericTable<MovieModelTable>
-            title="Movies"
+            title="Movies Approval"
             data={movies}
             columns={columns}
             options={{

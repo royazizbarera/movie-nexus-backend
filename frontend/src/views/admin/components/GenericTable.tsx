@@ -28,6 +28,9 @@ import {
 } from "@mui/joy";
 
 import PaginationComponent from "./PaginationComponent";
+import { SnackbarState } from "./SnackbarState";
+
+// icon
 import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
 import DeleteForeverRoundedIcon from "@mui/icons-material/DeleteForeverRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -35,17 +38,7 @@ import FilterAltRoundedIcon from "@mui/icons-material/FilterAltRounded";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import DangerousOutlinedIcon from "@mui/icons-material/DangerousOutlined";
-interface SnackbarState {
-  title: string;
-  key?: string;
-  open: boolean;
-  vertical: "top" | "bottom";
-  horizontal: "left" | "center" | "right";
-  variant?: "solid" | "outlined" | "plain" | "soft";
-  size?: "sm" | "md" | "lg";
-  color?: "primary" | "neutral" | "danger" | "success" | "warning";
-  autoHideDuration?: number; // in ms
-}
+
 
 const styleSelect = {
   width: "100%",
@@ -72,6 +65,7 @@ export interface Column<T> {
   componentShow?: "Chip" | "Avatar" | "Icon" | "Button";
   readonly?: boolean;
   width?: number | string;
+  required?: boolean;
 }
 
 interface GenericTableProps<T> {
@@ -131,7 +125,11 @@ export default function GenericTable<T>({
   const [searchQuery, setSearchQuery] = React.useState("");
   const [multiSelectValues, setMultiSelectValues] = React.useState<{
     [key: string]: string[];
-  }>({});
+  }>({
+    genres: [],
+    actors: [],
+    awards: [],
+  });
   const [boolSelectValues, setBoolSelectValues] = React.useState<{
     [key: string]: boolean;
   }>({});
@@ -375,17 +373,19 @@ export default function GenericTable<T>({
     const formData = new FormData(event.currentTarget);
     const formJson = Object.fromEntries(formData.entries()); // Konversi FormData ke objek
 
+    const finalData = {
+      ...newItem,
+      ...formJson,
+      ...multiSelectValues, // Gabungkan nilai multiSelectValues
+      ...boolSelectValues,
+    };
+
     // Lakukan sesuatu dengan data yang sudah di-submit
-    console.log("Submitted add data:", formJson);
+    console.log("Submitted add data:", finalData);
     console.info("New Item: ", newItem);
     if (newItem && onAdd) {
       try {
-        const success = await onAdd({
-          ...newItem,
-          ...formJson,
-          ...multiSelectValues,
-          ...boolSelectValues,
-        } as T); // Gabungkan data form dengan newItem
+        const success = await onAdd(finalData as T); // Gabungkan data form dengan newItem
         success
           ? handleOpenSnackbar({
               ...defaultSnackbarState,
@@ -464,11 +464,11 @@ export default function GenericTable<T>({
   };
 
   // TODO (DONE): Helper function to render input in edit modal based on type
-  const renderInputField = (col: Column<T>, options: string[] = []) => {
-    const currentItem = selectedItem || newItem;
-    if (!currentItem) return null;
-    const value = currentItem[col.key];
-
+  const renderInputField = (
+    value: any,
+    col: Column<T>,
+    options: string[] = []
+  ) => {
     switch (col.type) {
       case "string":
         return (
@@ -708,7 +708,11 @@ export default function GenericTable<T>({
                       }}
                     >
                       <FormLabel>{col.label}</FormLabel>
-                      {renderInputField(col, options[col.key as string] || [])}
+                      {renderInputField(
+                        newItem[col.key],
+                        col,
+                        options[col.key as string] || []
+                      )}
                     </FormControl>
                   )
                 )}
@@ -1027,7 +1031,11 @@ export default function GenericTable<T>({
                   col.readonly ? null : (
                     <FormControl key={col.key as string}>
                       <FormLabel>{col.label}</FormLabel>
-                      {renderInputField(col, options[col.key as string] || [])}
+                      {renderInputField(
+                        newItem[col.key],
+                        col,
+                        options[col.key as string] || []
+                      )}
                     </FormControl>
                   )
                 )}
@@ -1058,7 +1066,11 @@ export default function GenericTable<T>({
                   col.readonly ? null : (
                     <FormControl key={col.key as string}>
                       <FormLabel>{col.label}</FormLabel>
-                      {renderInputField(col, options[col.key as string] || [])}
+                      {renderInputField(
+                        selectedItem ? selectedItem[col.key] : "",
+                        col,
+                        options[col.key as string] || []
+                      )}
                     </FormControl>
                   )
                 )}

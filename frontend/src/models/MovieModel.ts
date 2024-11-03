@@ -3,14 +3,10 @@ import { AwardModel } from "./AwardModel";
 import { CountryModel } from "./CountryModel";
 import { DirectorModel } from "./DirectorModel";
 import { GenreModel } from "./GenreModel";
+import { ReviewModel } from "./ReviewModel";
+import { UserModel } from "./UserModel";
 
-interface Review {
-  id: number;
-  content: string;
-  rating: number;
-  movieId: number;
-  userId: number;
-}
+
 
 export interface MovieModel {
   id: number;
@@ -29,10 +25,13 @@ export interface MovieModel {
   director: DirectorModel | null;
   directorId: number;
 
+  addedBy: UserModel | null;
+  userId: number;
+
   genres: GenreModel[];
   actors: ActorModel[];
   awards?: AwardModel[] | undefined;
-  reviews?: Review[] | null;
+  reviews?: ReviewModel[] | null;
 }
 
 export interface MovieModelTable {
@@ -51,6 +50,7 @@ export interface MovieModelTable {
   actors: string[];
   awards: string[];
   reviews: string[];
+  addedBy: string;
 }
 
 export interface MovieParamsModel {
@@ -88,5 +88,6 @@ export function convertMovieModelToTable(movie: MovieModel): MovieModelTable {
     actors: movie.actors.map((a) => a.name), // Extract actor names from actors array
     awards: movie.awards ? movie.awards.map((a) => a.name) : [], // Extract award names from awards array or empty array if awards is null
     reviews: movie.reviews ? movie.reviews.map((r) => r.content) : [], // Extract review content from reviews array or empty array if reviews is null
+    addedBy: movie.addedBy ? movie.addedBy.username : "Unknown", // Default to "Unknown" if added
   };
 }

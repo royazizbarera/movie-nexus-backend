@@ -32,7 +32,7 @@ export default function ActorCard({ id, name, photoUrl }: ActorCardProps) {
         }}
       >
         <CardOverflow variant="soft" sx={{ bgcolor: "background.level1" }}>
-          <Link to={"/movie/1"}>
+          <Link to={`/actors/${id || 0}`}>
             <IconButton
               aria-label="bookmark Bahamas Islands"
               variant="plain"

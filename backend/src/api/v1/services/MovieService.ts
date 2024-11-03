@@ -370,7 +370,8 @@ class MovieService {
     if (award) addAwardFilter(whereClause, award);
     if (director) addDirectorFilter(whereClause, director);
 
-    if (approvalStatus) {
+    // nambahin if approvalStatus != undefined
+    if (approvalStatus !== undefined) {
       whereClause.AND.push({ approvalStatus });
     } else {
       whereClause.AND.push({ approvalStatus: true });

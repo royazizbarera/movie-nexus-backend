@@ -9,6 +9,9 @@ import AdminAwardPage from "../views/admin/pages/AdminAwardPage";
 import AdminDirectorPage from "../views/admin/pages/AdminDirectorPage";
 import AdminUserPage from "../views/admin/pages/AdminUserPage";
 import AdminDashboardPage from "../views/admin/pages/AdminDashboardPage";
+import AdminMovieApprovalPage from "../views/admin/pages/AdminMovieApprovalPage";
+import AdminReviewPage from "../views/admin/pages/AdminReviewPage";
+import AdminReviewApprovalPage from "../views/admin/pages/AdminReviewApprovalPage";
 
 export default function AdminRoutes() {
   return (
@@ -22,13 +25,14 @@ export default function AdminRoutes() {
       <Route path={menu.awards.path} element={<AdminAwardPage />} />
       <Route path={menu.directors.path} element={<AdminDirectorPage />} />
       <Route path={menu.users.path} element={<AdminUserPage />} />
+      <Route path={menu.reviews.path} element={<AdminReviewPage />} />
       <Route
         path={menu.movies_approval.path}
-        element={<AdminGenrePage />}
+        element={<AdminMovieApprovalPage />}
       />
       <Route
         path={menu.reviews_approval.path}
-        element={<AdminGenrePage />}
+        element={<AdminReviewApprovalPage />}
       />
     </Routes>
   );

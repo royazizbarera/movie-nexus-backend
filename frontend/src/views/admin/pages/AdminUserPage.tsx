@@ -39,6 +39,7 @@ function convertUserModelToTable(user: UserModel): UserModelTable {
     verificationCode: user.verificationCode,
     verificationCodeExpired: user.verificationCodeExpired,
     verificationRequestDate: user.verificationRequestDate,
+    isSuspened: user.isSuspened,
   };
 }
 const columns: any[] = [

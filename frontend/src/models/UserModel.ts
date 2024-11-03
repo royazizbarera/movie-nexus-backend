@@ -15,6 +15,7 @@ export interface UserModel {
   verificationCode?: string;
   verificationCodeExpired?: string;
   verificationRequestDate?: string;
+  isSuspened: boolean;
 };
 
 
@@ -30,6 +31,7 @@ export interface UserModelTable {
   verificationCode?: string;
   verificationCodeExpired?: string;
   verificationRequestDate?: string;
+  isSuspened: boolean;
 };
 
 
@@ -42,4 +44,5 @@ export interface UserParamsModel {
   country?: string;
   sortBy?: string;
   sortOrder?: string;
+  isSuspened?: boolean;
 }
