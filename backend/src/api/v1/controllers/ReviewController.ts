@@ -119,6 +119,112 @@ class ReviewController {
             );
         }
     }
+
+    /**
+     * Creates a new review.
+     *
+     * @param {Request} req - The Express request object containing the review data in the body.
+     * @param {Response} res - The Express response object to send back the result.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the newly created review's data.
+     * @throws {Error} If there is an issue creating the review, an error message will be returned.
+     */
+    async createReview(req: Request, res: Response): Promise<Response> {
+        try {
+            const reviewData = req.body;
+
+            const newReview = await reviewService.createReview(reviewData);
+
+            return res.json(
+                ResponseApi({
+                    code: HttpStatus.CREATED,
+                    message: "Review created successfully",
+                    data: newReview,
+                    version: 1.0,
+                })
+            );
+        } catch (error) {
+            console.error("Error creating review: ", error);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
+                ResponseApi({
+                    code: HttpStatus.INTERNAL_SERVER_ERROR,
+                    message: "Failed to create review",
+                    errors: error instanceof Error ? error.message : String(error),
+                    version: 1.0,
+                })
+            );
+        }
+    }
+
+    /**
+     * Updates an existing review by its ID.
+     *
+     * @param {Request} req - The Express request object containing the review ID in the route parameters and updated data in the body.
+     * @param {Response} res - The Express response object to send back the result.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the updated review's data.
+     * @throws {Error} If there is an issue updating the review, an error message will be returned.
+     */
+    async updateReviewById(req: Request, res: Response): Promise<Response> {
+        const reviewId = parseInt(req.params.id, 10);
+        const reviewData = req.body;
+
+        try {
+            const updatedReview = await reviewService.updateReviewById(reviewId, reviewData);
+
+            return res.json(
+                ResponseApi({
+                    code: HttpStatus.OK,
+                    message: "Review updated successfully",
+                    data: updatedReview,
+                    version: 1.0,
+                })
+            );
+        } catch (error) {
+            console.error("Error updating review: ", error);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
+                ResponseApi({
+                    code: HttpStatus.INTERNAL_SERVER_ERROR,
+                    message: "Failed to update review",
+                    errors: error instanceof Error ? error.message : String(error),
+                    version: 1.0,
+                })
+            );
+        }
+    }
+
+    /**
+     * Deletes a review by its ID.
+     *
+     * @param {Request} req - The Express request object containing the review ID in the route parameters.
+     * @param {Response} res - The Express response object to send back the result.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response indicating the result of the delete operation.
+     * @throws {Error} If there is an issue deleting the review, an error message will be returned.
+     */
+    async deleteReviewById(req: Request, res: Response): Promise<Response> {
+        const reviewId = parseInt(req.params.id, 10);
+
+        try {
+            const deletedReview = await reviewService.deleteReviewById(reviewId);
+
+            return res.json(
+                ResponseApi({
+                    code: HttpStatus.OK,
+                    message: "Review deleted successfully",
+                    data: deletedReview,
+                    version: 1.0,
+                })
+            );
+        } catch (error) {
+            console.error("Error deleting review: ", error);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
+                ResponseApi({
+                    code: HttpStatus.INTERNAL_SERVER_ERROR,
+                    message: "Failed to delete review",
+                    errors: error instanceof Error ? error.message : String(error),
+                    version: 1.0,
+                })
+            );
+        }
+    }
 }
 
 const reviewController = new ReviewController();

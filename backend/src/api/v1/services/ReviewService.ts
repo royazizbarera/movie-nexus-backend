@@ -137,11 +137,18 @@ class ReviewService {
                 throw new Error("User not found");
             }
 
+            let approvalStatus = false;
+
+            if (user.role === "admin") {
+                approvalStatus = true;
+            }
+
             return await prisma.$transaction(async (prisma) => {
                 const review = await prisma.review.create({
                     data: {
                         content,
                         rating,
+                        approvalStatus,
                         movieId,
                         userId: user.id
                     },
@@ -154,6 +161,46 @@ class ReviewService {
         } catch (error) {
             console.error(error);
             throw new Error("Could not create review");
+        }
+    }
+
+    /**
+     * Updates a review by its ID.
+     * @param {number} id - The ID of the review to be updated.
+     * @param {any} updatedData - The updated data of the review.
+     * @returns {Promise<any>} The updated review data.
+     * @throws {Error} If there is an issue updating the review.
+     */
+    async updateReviewById(id: number, updatedData: any): Promise<any> {
+        try {
+            const dataToUpdate: any = {
+                ...(updatedData.content ? { content: updatedData.cotent } : {}),
+                ...(updatedData.rating ? { rating: updatedData.rating } : {}),
+                ...(updatedData.approvalStatus ? { approvalStatus: updatedData.approvalStatus } : {}),
+            };
+
+            return await prisma.review.update({
+                where: { id },
+                data: dataToUpdate
+            });
+        } catch (error) {
+            throw new Error(`Could not update review with ID ${id}`);
+        }
+    }
+
+    /**
+     * Deletes a review by its ID.
+     * @param {number} id - The ID of the review to be deleted.
+     * @returns {Promise<any>} The deleted review data.
+     * @throws {Error} If there is an issue deleting the review.
+     */
+    async deleteReviewById(id: number): Promise<any> {
+        try {
+            return await prisma.review.delete({
+                where: {id}
+            });
+        } catch (error) {
+            throw new Error(`Could not delete review with ID ${id}`);
         }
     }
 }

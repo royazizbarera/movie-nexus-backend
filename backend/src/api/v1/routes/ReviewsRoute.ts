@@ -1,6 +1,7 @@
 import express from "express";
 import ReviewController from "../controllers/ReviewController";
 import { verifyToken } from "../middlewares/verifyToken";
+import { verifyAdmin } from "../middlewares/verifyAdmin";
 
 const router = express.Router();
 
@@ -17,5 +18,26 @@ router.get("/", ReviewController.getReviews);
  * @access Public
  */
 router.get("/:id", ReviewController.getReviewById);
+
+/**
+ * @route POST /reviews
+ * @description Create a new review
+ * @access Private
+ */
+router.post("/", verifyToken, ReviewController.createReview);
+
+/**
+ * @route PUT /reviews/:id
+ * @description Update a review by ID
+ * @access Private
+ */
+router.put("/:id", verifyAdmin, ReviewController.updateReviewById);
+
+/**
+ * @route DELETE /reviews/:id
+ * @description Delete a review by ID
+ * @access Private
+ */
+router.delete("/:id", verifyAdmin, ReviewController.deleteReviewById);
 
 export default router;

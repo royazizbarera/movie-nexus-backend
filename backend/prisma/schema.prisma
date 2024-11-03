@@ -121,13 +121,14 @@ model MovieAwards {
 
 /// Represents a review of a movie by a user with a unique composite key of user and movie.
 model Review {
-  id      Int    @id @default(autoincrement())
-  userId  Int
-  movieId Int
-  content String
-  rating  Int
-  user    User   @relation(fields: [userId], references: [id])
-  movie   Movie  @relation(fields: [movieId], references: [id])
+  id             Int     @id @default(autoincrement())
+  userId         Int
+  movieId        Int
+  content        String
+  rating         Int
+  approvalStatus Boolean
+  user           User    @relation(fields: [userId], references: [id])
+  movie          Movie   @relation(fields: [movieId], references: [id])
 
   @@index([movieId, userId])
 }

@@ -222,6 +222,10 @@ class MovieService {
         ...(updatedData.directorId
           ? { director: { connect: { id: updatedData.directorId } } }
           : {}),
+        ...(updatedData.backdropUrl)
+            ? { backdropUrl: updatedData.backdropUrl }
+            : {},
+        ...(updatedData.videoUrl) ? { videoUrl: updatedData.videoUrl } : {},
       };
 
       // Update movie main fields first
@@ -373,7 +377,7 @@ class MovieService {
         const searchQuery = `
                 SELECT id
                 FROM "Movie"
-                WHERE SIMILARITY("title", $1) > 0.01 OR SIMILARITY("synopsis", $1) > 0.01
+                WHERE SIMILARITY("title", $1) > 0.1 OR SIMILARITY("synopsis", $1) > 0.5
                 ORDER BY SIMILARITY("title", $1) DESC
                 LIMIT $2 OFFSET $3;
             `;
