@@ -1,6 +1,7 @@
 import express from "express";
 import movieController from "../controllers/MovieController";
 import { verifyToken } from "../middlewares/verifyToken";
+import {verifyAdmin} from "../middlewares/verifyAdmin";
 
 const router = express.Router();
 
@@ -10,6 +11,13 @@ const router = express.Router();
  * @access Public
  */
 router.get("/", movieController.getMovies);
+
+/**
+ * @route GET /movies/unapproved
+ * @description Get a list of all unapproved movies
+ * @access Private
+ */
+router.get("/unapproved", verifyAdmin, movieController.getUnapprovedMovies);
 
 /**
  * @route GET /movies/:id
@@ -30,13 +38,13 @@ router.post("/", verifyToken, movieController.createMovie);
  * @description Update a movie by ID
  * @access Private
  */
-router.put("/:id", verifyToken, movieController.updateMovieById);
+router.put("/:id", verifyAdmin, movieController.updateMovieById);
 
 /**
  * @route DELETE /movies/:id
  * @description Delete a movie by ID
  * @access Private
  */
-router.delete("/:id", verifyToken, movieController.deleteMovieById);
+router.delete("/:id", verifyAdmin, movieController.deleteMovieById);
 
 export default router;

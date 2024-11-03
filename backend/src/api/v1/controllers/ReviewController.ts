@@ -66,6 +66,69 @@ class ReviewController {
     }
 
     /**
+     * Retrieves unapproved reviews based on pagination, search parameters, and filters.
+     *
+     * @param {Request} req - The Express request object containing query parameters.
+     * @param {Response} res - The Express response object to send back the result.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the reviews data and pagination info.
+     * @throws {Error} If there is an issue fetching the reviews, an error message will be returned.
+     */
+    async getUnapprovedReviews(req: Request, res: Response): Promise<Response> {
+        try {
+            const {
+                page = "1",
+                pageSize = "10",
+                searchTerm = '',
+                rating = '',
+                userId = '',
+                sortBy = '',
+                sortOrder = 'asc',
+            } = req.query;
+
+            const parsedPage = parseInt(page as string, 10) || 1;
+            const parsedPageSize = parseInt(pageSize as string, 10) || 10;
+
+            const [reviews, totalItems] = await reviewService.getReviews({
+                page: parsedPage,
+                pageSize: parsedPageSize,
+                params: {
+                    searchTerm: searchTerm as string,
+                    rating: parseInt(rating as string, 10),
+                    userId: parseInt(userId as string, 10),
+                    sortBy: sortBy as string,
+                    sortOrder: sortOrder as "asc" | "desc",
+                    approvalStatus: false,
+                },
+            });
+
+            return res.json(
+                ResponseApi({
+                    code: HttpStatus.OK,
+                    message: "Unapproved reviews fetched successfully",
+                    data: reviews,
+                    version: 1.0,
+                    pagination: {
+                        page: parsedPage,
+                        pageSize: parsedPageSize,
+                        totalItems,
+                        totalPages: Math.ceil(totalItems / parsedPageSize),
+                    },
+                })
+            );
+        } catch (error) {
+            console.error("Error fetching unapproved reviews: ", error);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
+                ResponseApi({
+                    code: HttpStatus.INTERNAL_SERVER_ERROR,
+                    message: "Failed to fetch unapproved reviews",
+                    errors: error instanceof Error ? error.message : String(error),
+                    version: 1.0,
+                })
+            );
+        }
+        }
+
+    /**
      * Retrieves a single review by their ID.
      *
      * @param {Request} req - The Express request object containing the review ID in the route parameters.

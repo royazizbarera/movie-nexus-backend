@@ -46,11 +46,21 @@ class ReviewService {
         params: SearchParams;
     }): Promise<any[]> {
         const skip = (page - 1) * pageSize;
-        const { searchTerm, rating, userId, sortBy, sortOrder } = params;
+        const { searchTerm, rating, userId, sortBy, sortOrder, approvalStatus } = params;
         const whereClause: any = { AND: [] };
 
         if (rating) addRatingFilter(whereClause, rating);
         if (userId) addUserIdFilter(whereClause, userId);
+
+        if (approvalStatus) {
+            whereClause.AND.push({
+                approvalStatus
+            });
+        } else {
+            whereClause.AND.push({
+                approvalStatus: true
+            });
+        }
 
         if (whereClause.AND.length === 0) {
             delete whereClause.AND;

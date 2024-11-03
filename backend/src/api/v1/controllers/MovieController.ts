@@ -78,6 +78,59 @@ class MovieController {
     }
 
     /**
+     * Retrieves a list of unapproved movies with optional filters, sorting, and pagination.
+     * @param req - Express Request object with query parameters for filtering, sorting, and pagination.
+     * @param res - Express Response object.
+     * @returns JSON response containing the list of movies with pagination details.
+     */
+    async getUnapprovedMovies(req: Request, res: Response): Promise<Response> {
+        try {
+            const { page = "1", pageSize = "24", year, ...filters } = req.query;
+            const parsedPage = parseInt(page as string, 10);
+            const parsedPageSize = parseInt(pageSize as string, 10);
+
+            // Early validation for the year filter
+            if (year && parseInt(year as string, 10) < 1900) {
+                return res.status(HttpStatus.BAD_REQUEST).json(
+                    ResponseApi({
+                        code: HttpStatus.BAD_REQUEST,
+                        message: "Year must be a valid number greater than 1900",
+                        version: 1.0,
+                    })
+                );
+            }
+
+            let filtered = {...filters, approved: false};
+
+            const [movies, totalItems] = await movieService.getMovies({
+                page: parsedPage,
+                pageSize: parsedPageSize,
+                params: {
+                    ...filtered,
+                    year: year ? parseInt(year as string, 10) : undefined,
+                },
+            });
+
+            return res.json(
+                ResponseApi({
+                    code: HttpStatus.OK,
+                    message: "Movies fetched successfully",
+                    data: movies,
+                    version: 1.0,
+                    pagination: {
+                        page: parsedPage,
+                        pageSize: parsedPageSize,
+                        totalItems,
+                        totalPages: Math.ceil(totalItems / parsedPageSize),
+                    },
+                })
+            );
+        } catch (error) {
+            return this.handleError(res, error, "Failed to fetch movies");
+        }
+    }
+
+    /**
      * Retrieves a movie by its unique identifier.
      * @param req - Express Request object containing the movie ID as a route parameter.
      * @param res - Express Response object.

@@ -11,5 +11,5 @@ export default interface SearchParams {
     genre?: string;
     rating?: number;
     userId?: number;
-    approvalStatus?: "approved" | "pending" | "rejected";
+    approvalStatus?: boolean;
 }

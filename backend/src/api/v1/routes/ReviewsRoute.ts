@@ -13,6 +13,13 @@ const router = express.Router();
 router.get("/", ReviewController.getReviews);
 
 /**
+ * @route GET /reviews/unapproved
+ * @description Get a list of all unapproved reviews
+ * @access Private
+ */
+router.get("/unapproved", verifyAdmin, ReviewController.getUnapprovedReviews);
+
+/**
  * @route GET /reviews/:id
  * @description Get a single review by ID
  * @access Public

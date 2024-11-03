@@ -355,6 +355,7 @@ class MovieService {
       year,
       award,
       director,
+      approvalStatus
     } = params;
     const whereClause: any = { AND: [] };
 
@@ -364,6 +365,12 @@ class MovieService {
     if (year) addMovieYearFilter(whereClause, year);
     if (award) addAwardFilter(whereClause, award);
     if (director) addDirectorFilter(whereClause, director);
+
+    if (approvalStatus) {
+      whereClause.AND.push({ approvalStatus });
+    } else {
+      whereClause.AND.push({ approvalStatus: true });
+    }
 
     if (whereClause.AND.length === 0) {
       delete whereClause.AND;
