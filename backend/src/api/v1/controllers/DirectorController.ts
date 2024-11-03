@@ -1,24 +1,23 @@
 import HttpStatus from "../config/constants/HttpStatus";
 import ResponseApi from "../config/ResponseApi";
-import awardService from "../services/AwardService";
+import directorService from "../services/DirectorService";
 import { Response, Request } from "express";
 
-class AwardController {
+class DirectorController {
     /**
-     * Retrieves a list of awards based on pagination, search parameters, and filters.
+     * Retrieves a list of directors based on pagination, search parameters, and filters.
      *
      * @param {Request} req - The Express request object containing query parameters.
      * @param {Response} res - The Express response object to send back the result.
-     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the awards data and pagination info.
-     * @throws {Error} If there is an issue fetching the awards, an error message will be returned.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the directors data and pagination info.
+     * @throws {Error} If there is an issue fetching the directors, an error message will be returned.
      */
-    async getAwards(req: Request, res: Response): Promise<Response> {
+    async getDirectors(req: Request, res: Response): Promise<Response> {
         try {
             const {
                 page = "1",
                 pageSize = "24",
                 searchTerm = '',
-                year = '',
                 country = '',
                 sortBy = '',
                 sortOrder = 'asc',
@@ -27,13 +26,12 @@ class AwardController {
             const parsedPage = parseInt(page as string, 10) || 1;
             const parsedPageSize = parseInt(pageSize as string, 10) || 24;
 
-            const [awards, totalItems] = await awardService.getAwards({
+            const [directors, totalItems] = await directorService.getDirectors({
                 page: parsedPage,
                 pageSize: parsedPageSize,
                 params: {
                     searchTerm: searchTerm as string,
                     country: country as string,
-                    year: parseInt(year as string) || undefined,
                     sortBy: sortBy as string,
                     sortOrder: sortOrder as "asc" | "desc",
                 },
@@ -42,8 +40,8 @@ class AwardController {
             return res.json(
                 ResponseApi({
                     code: HttpStatus.OK,
-                    message: "Awards fetched successfully",
-                    data: awards,
+                    message: "Directors fetched successfully",
+                    data: directors,
                     version: 1.0,
                     pagination: {
                         page: parsedPage,
@@ -54,11 +52,11 @@ class AwardController {
                 })
             );
         } catch (error) {
-            console.error("Error fetching awards: ", error);
+            console.error("Error fetching directors: ", error);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
                 ResponseApi({
                     code: HttpStatus.INTERNAL_SERVER_ERROR,
-                    message: "Failed to fetch awards",
+                    message: "Failed to fetch directors",
                     errors: error instanceof Error ? error.message : String(error),
                     version: 1.0,
                 })
@@ -67,34 +65,34 @@ class AwardController {
     }
 
     /**
-     * Retrieves a single award by its ID.
+     * Retrieves a single director by their ID.
      *
-     * @param {Request} req - The Express request object containing the award ID in the route parameters.
+     * @param {Request} req - The Express request object containing the director ID in the route parameters.
      * @param {Response} res - The Express response object to send back the result.
-     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the award's data.
-     * @throws {Error} If the award cannot be found or there is an issue retrieving the award, an error will be thrown.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the director's data.
+     * @throws {Error} If the director cannot be found or there is an issue retrieving the director, an error will be thrown.
      */
-    async getAwardById(req: Request, res: Response): Promise<Response> {
+    async getDirectorById(req: Request, res: Response): Promise<Response> {
         try {
-            const awardId = parseInt(req.params.id, 10);
+            const directorId = parseInt(req.params.id, 10);
 
-            if (isNaN(awardId)) {
+            if (isNaN(directorId)) {
                 return res.status(HttpStatus.BAD_REQUEST).json(
                     ResponseApi({
                         code: HttpStatus.BAD_REQUEST,
-                        message: "Invalid award ID",
+                        message: "Invalid director ID",
                         version: 1.0,
                     })
                 );
             }
 
-            const award = await awardService.getAwardById(awardId);
+            const director = await directorService.getDirectorById(directorId);
 
-            if (!award) {
+            if (!director) {
                 return res.status(HttpStatus.NOT_FOUND).json(
                     ResponseApi({
                         code: HttpStatus.NOT_FOUND,
-                        message: "Award not found",
+                        message: "Director not found",
                         version: 1.0,
                     })
                 );
@@ -103,17 +101,17 @@ class AwardController {
             return res.json(
                 ResponseApi({
                     code: HttpStatus.OK,
-                    message: "Award fetched successfully",
-                    data: award,
+                    message: "Director fetched successfully",
+                    data: director,
                     version: 1.0,
                 })
             );
         } catch (error) {
-            console.error("Error fetching award: ", error);
+            console.error("Error fetching director: ", error);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
                 ResponseApi({
                     code: HttpStatus.INTERNAL_SERVER_ERROR,
-                    message: "Failed to fetch award",
+                    message: "Failed to fetch director",
                     errors: error instanceof Error ? error.message : String(error),
                     version: 1.0,
                 })
@@ -122,33 +120,33 @@ class AwardController {
     }
 
     /**
-     * Creates a new award.
+     * Creates a new director.
      *
-     * @param {Request} req - The Express request object containing the award data in the body.
+     * @param {Request} req - The Express request object containing the director data in the body.
      * @param {Response} res - The Express response object to send back the result.
-     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the newly created award's data.
-     * @throws {Error} If there is an issue creating the award, an error message will be returned.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the newly created director's data.
+     * @throws {Error} If there is an issue creating the director, an error message will be returned.
      */
-    async createAward(req: Request, res: Response): Promise<Response> {
+    async createDirector(req: Request, res: Response): Promise<Response> {
         try {
-            const awardData = req.body;
+            const directorData = req.body;
 
-            const newAward = await awardService.createAward(awardData);
+            const newDirector = await directorService.createDirector(directorData);
 
             return res.json(
                 ResponseApi({
                     code: HttpStatus.CREATED,
-                    message: "Award created successfully",
-                    data: newAward,
+                    message: "Director created successfully",
+                    data: newDirector,
                     version: 1.0,
                 })
             );
         } catch (error) {
-            console.error("Error creating award: ", error);
+            console.error("Error creating director: ", error);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
                 ResponseApi({
                     code: HttpStatus.INTERNAL_SERVER_ERROR,
-                    message: "Failed to create award",
+                    message: "Failed to create director",
                     errors: error instanceof Error ? error.message : String(error),
                     version: 1.0,
                 })
@@ -157,34 +155,34 @@ class AwardController {
     }
 
     /**
-     * Updates an existing award by its ID.
+     * Updates an existing director by their ID.
      *
-     * @param {Request} req - The Express request object containing the award ID in the route parameters and updated data in the body.
+     * @param {Request} req - The Express request object containing the director ID in the route parameters and updated data in the body.
      * @param {Response} res - The Express response object to send back the result.
-     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the updated award's data.
-     * @throws {Error} If there is an issue updating the award, an error message will be returned.
+     * @returns {Promise<Response>} A promise that resolves to a JSON response containing the updated director's data.
+     * @throws {Error} If there is an issue updating the director, an error message will be returned.
      */
-    async updateAwardById(req: Request, res: Response): Promise<Response> {
-        const awardId = parseInt(req.params.id, 10);
-        const awardData = req.body;
+    async updateDirectorById(req: Request, res: Response): Promise<Response> {
+        const directorId = parseInt(req.params.id, 10);
+        const directorData = req.body;
 
         try {
-            const updatedAward = await awardService.updateAwardById(awardId, awardData);
+            const updatedDirector = await directorService.updateDirectorById(directorId, directorData);
 
             return res.json(
                 ResponseApi({
                     code: HttpStatus.OK,
-                    message: "Award updated successfully",
-                    data: updatedAward,
+                    message: "Director updated successfully",
+                    data: updatedDirector,
                     version: 1.0,
                 })
             );
         } catch (error) {
-            console.error("Error updating award: ", error);
+            console.error("Error updating director: ", error);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
                 ResponseApi({
                     code: HttpStatus.INTERNAL_SERVER_ERROR,
-                    message: "Failed to update award",
+                    message: "Failed to update director",
                     errors: error instanceof Error ? error.message : String(error),
                     version: 1.0,
                 })
@@ -193,33 +191,33 @@ class AwardController {
     }
 
     /**
-     * Deletes an award by its ID.
+     * Deletes a director by their ID.
      *
-     * @param {Request} req - The Express request object containing the award ID in the route parameters.
+     * @param {Request} req - The Express request object containing the director ID in the route parameters.
      * @param {Response} res - The Express response object to send back the result.
      * @returns {Promise<Response>} A promise that resolves to a JSON response indicating the result of the delete operation.
-     * @throws {Error} If there is an issue deleting the award, an error message will be returned.
+     * @throws {Error} If there is an issue deleting the director, an error message will be returned.
      */
-    async deleteAwardById(req: Request, res: Response): Promise<Response> {
-        const awardId = parseInt(req.params.id, 10);
+    async deleteDirectorById(req: Request, res: Response): Promise<Response> {
+        const directorId = parseInt(req.params.id, 10);
 
         try {
-            const deletedAward = await awardService.deleteAwardById(awardId);
+            const deletedDirector = await directorService.deleteDirectorById(directorId);
 
             return res.json(
                 ResponseApi({
                     code: HttpStatus.OK,
-                    message: "Award deleted successfully",
-                    data: deletedAward,
+                    message: "Director deleted successfully",
+                    data: deletedDirector,
                     version: 1.0,
                 })
             );
         } catch (error) {
-            console.error("Error deleting award: ", error);
+            console.error("Error deleting director: ", error);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(
                 ResponseApi({
                     code: HttpStatus.INTERNAL_SERVER_ERROR,
-                    message: "Failed to delete award",
+                    message: "Failed to delete director",
                     errors: error instanceof Error ? error.message : String(error),
                     version: 1.0,
                 })
@@ -228,5 +226,5 @@ class AwardController {
     }
 }
 
-const awardController = new AwardController();
-export default awardController;
+const directorController = new DirectorController();
+export default directorController;

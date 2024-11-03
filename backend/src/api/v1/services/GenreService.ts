@@ -1,178 +1,185 @@
-// GenreService.ts
 import prisma from "../config/client";
 import SearchParams from "../helpers/SearchParams";
 
 class GenreService {
-  // count
-  async countGenres() {
-    try {
-      const count = await prisma.genre.count();
-      return count;
-    } catch (error) {
-      throw new Error("Could not count genres");
-    } 
-  }
-
-  // Metode untuk mendapatkan semua genre
-async getGenres({
-    page = undefined,
-    pageSize = undefined,
-    params,
-  }: {
-    page: number | undefined;
-    pageSize: number | undefined;
-    params: SearchParams;
-  }) {
-    var skip = undefined;
-    if (page && pageSize) {
-      skip = (page - 1) * pageSize;
-    }
-
-    const { filters, sortBy, sortOrder } = params;
-
-    const whereClause: any = {
-      AND: [],
-    };
-
-    if (filters && filters.length > 0) {
-      filters.forEach((filter: any) => {
-        const { columnKey, operator, value } = filter;
-        console.info(columnKey);
-        switch (operator) {
-          case "eq":
-            whereClause.AND.push({ [columnKey]: { equals: value } });
-            break;
-          case "neq":
-            whereClause.AND.push({ [columnKey]: { not: value } });
-            break;
-          case "gt":
-            whereClause.AND.push({ [columnKey]: { gt: parseFloat(value) } });
-            break;
-          case "lt":
-            whereClause.AND.push({ [columnKey]: { lt: parseFloat(value) } });
-            break;
-          case "gte":
-            whereClause.AND.push({ [columnKey]: { gte: parseFloat(value) } });
-            break;
-          case "lte":
-            whereClause.AND.push({ [columnKey]: { lte: parseFloat(value) } });
-            break;
-          case "contains":
-            whereClause.AND.push({
-              [columnKey]: { contains: value, mode: "insensitive" },
-            });
-            break;
-          case "startsWith":
-            whereClause.AND.push({
-              [columnKey]: { startsWith: value, mode: "insensitive" },
-            });
-            break;
-          case "endsWith":
-            whereClause.AND.push({
-              [columnKey]: { endsWith: value, mode: "insensitive" },
-            });
-            break;
-          default:
-            break;
-        }
-      });
-      // console.info(whereClause.AND);
-    }
-
-    // If no filters applied, delete AND to prevent Prisma from erroring
-    if (whereClause.AND.length === 0) {
-      delete whereClause.AND;
-    }
-
-    try {
-      // Mengambil semua data film dari database
-      const countries = await prisma.genre.findMany({
-        where: whereClause,
-        orderBy: sortBy
-          ? {
-              [sortBy]: sortOrder || "asc",
+    /**
+     * Counts the number of genres based on the provided where clause and optional genre IDs.
+     * @param {object} whereClause - The conditions to filter the genres.
+     * @param {any} [genresIds] - Optional array of genre IDs to filter.
+     * @returns {Promise<number>} The count of genres.
+     * @throws {Error} If there is an issue counting the genres.
+     */
+    async countGenres(whereClause: object, genresIds?: any): Promise<number> {
+        try {
+            if (genresIds) {
+                return prisma.genre.count({
+                    where: {
+                        id: { in: genresIds },
+                        ...whereClause,
+                    },
+                });
             }
-          : undefined,
-        skip: skip,
-        take: pageSize,
-      });
-      return countries;
-    } catch (error) {
-      throw new Error("Could not fetch Genres");
+            return prisma.genre.count({ where: whereClause });
+        } catch (error) {
+            console.error("Error counting genres:", error);
+            throw new Error("Could not count genres");
+        }
     }
-  }
 
-  // Metode untuk mendapatkan satu genre berdasarkan ID
-  async getGenreById(id: number) {
-    try {
-      // Mengambil genre berdasarkan ID
-      const genre = await prisma.genre.findUnique({
-        where: {
-          id: id,
-        },
-      });
+    /**
+     * Retrieves a list of genres based on pagination, search parameters, and filters.
+     * @param {object} options - The options for retrieving genres.
+     * @param {number} [options.page=1] - The page number for pagination.
+     * @param {number} [options.pageSize=24] - The number of items per page.
+     * @param {SearchParams} options.params - The search parameters and filters.
+     * @returns {Promise<any[]>} A promise that resolves to an array containing the genres and total items count.
+     * @throws {Error} If there is an issue fetching the genres.
+     */
+    async getGenres({
+                        page = 1,
+                        pageSize = 24,
+                        params,
+                    }: {
+        page: number | undefined;
+        pageSize: number | undefined;
+        params: SearchParams;
+    }): Promise<any[]> {
+        const skip = (page - 1) * pageSize;
+        const { searchTerm, sortBy, sortOrder } = params;
+        const whereClause: any = { AND: [] };
 
-      // Jika genre tidak ditemukan, lempar error
-      if (!genre) {
-        throw new Error(`Genre with ID ${id} not found`);
-      }
+        if (whereClause.AND.length === 0) {
+            delete whereClause.AND;
+        }
 
-      return genre;
-    } catch (error) {
-      throw new Error(`Could not fetch genre with ID ${id}`);
+        try {
+            let genres;
+            let totalItems;
+
+            if (searchTerm) {
+                const searchQuery = `
+                SELECT id
+                FROM "Genre"
+                WHERE SIMILARITY("name", $1) > 0.1
+                ORDER BY SIMILARITY("name", $1) DESC
+                LIMIT $2 OFFSET $3;
+            `;
+                const searchResults = await prisma.$queryRawUnsafe(searchQuery, searchTerm, pageSize, skip) as any[];
+
+                const genresIds = searchResults.map(genre => genre.id);
+                genres = await prisma.genre.findMany({
+                    where: {
+                        id: { in: genresIds },
+                        ...whereClause,
+                    },
+                    skip,
+                    take: pageSize,
+                });
+                totalItems = await this.countGenres(whereClause, genresIds);
+            } else {
+                genres = await prisma.genre.findMany({
+                    where: whereClause,
+                    orderBy: sortBy ? { [sortBy]: sortOrder || "asc" } : undefined,
+                    skip,
+                    take: pageSize,
+                });
+
+                totalItems = await this.countGenres(whereClause);
+            }
+
+            return [genres, totalItems];
+        } catch (error) {
+            throw new Error("Error fetching genres");
+        }
     }
-  }
 
-  // Metode untuk menambahkan genre baru
-  async addGenre(genreName: string) {
-    try {
-      // Menambahkan genre baru ke database
-      const genre = await prisma.genre.create({
-        data: {
-          name: genreName,
-        },
-      });
-
-      return genre;
-    } catch (error) {
-      throw new Error("Could not add genre");
+    /**
+     * Retrieves a genre by its ID.
+     * @param {number} id - The ID of the genre.
+     * @returns {Promise<any>} The genre data.
+     * @throws {Error} If there is an issue fetching the genre.
+     */
+    async getGenreById(id: number): Promise<any> {
+        try {
+            return await prisma.genre.findUnique({
+                where: {
+                    id: id,
+                },
+            });
+        } catch (error) {
+            throw new Error(`Could not fetch genre with ID ${id}`);
+        }
     }
-  }
 
-  // Metode untuk menghapus genre
-  async deleteGenre(id: number) {
-    try {
-      // Menghapus genre dari database
-      const genre = await prisma.genre.delete({
-        where: {
-          id: id,
-        },
-      });
+    /**
+     * Creates a new genre.
+     * @param {any} genreData - The data of the genre to be created.
+     * @returns {Promise<any>} The newly created genre data.
+     * @throws {Error} If there is an issue creating the genre.
+     */
+    async createGenre(genreData: any): Promise<any> {
+        try {
+            const { name } = genreData;
 
-      return genre;
-    } catch (error) {
-      throw new Error("Could not delete genre");
+            return await prisma.$transaction(async (prisma) => {
+                const genre = await prisma.genre.create({
+                    data: {
+                        name,
+                    },
+                });
+
+                return prisma.genre.findUnique({
+                    where: { id: genre.id },
+                });
+            });
+        } catch (error) {
+            throw new Error("Could not create genre");
+        }
     }
-  }
 
-  // Metode untuk mengubah genre
-  async updateGenre(id: number, genreName: string) {
-    try {
-      // Mengubah genre di database
-      const genre = await prisma.genre.update({
-        where: {
-          id: id,
-        },
-        data: {
-          name: genreName,
-        },
-      });
+    /**
+     * Updates a genre by its ID.
+     * @param {number} id - The ID of the genre to be updated.
+     * @param {any} updatedData - The updated data of the genre.
+     * @returns {Promise<any>} The updated genre data.
+     * @throws {Error} If there is an issue updating the genre.
+     */
+    async updateGenreById(id: number, updatedData: any): Promise<any> {
+        try {
+            const dataToUpdate: any = {
+                ...(updatedData.name ? { name: updatedData.name } : {}),
+            };
 
-      return genre;
-    } catch (error) {
-      throw new Error("Could not update genre");
+            return await prisma.genre.update({
+                where: { id },
+                data: dataToUpdate,
+            });
+        } catch (error) {
+            throw new Error(`Could not update genre with ID ${id}`);
+        }
     }
-  }
+
+    /**
+     * Deletes a genre by its ID.
+     * @param {number} id - The ID of the genre to be deleted.
+     * @returns {Promise<{ message: string, deletedGenre: any }>} The result of the delete operation.
+     * @throws {Error} If there is an issue deleting the genre.
+     */
+    async deleteGenreById(id: number): Promise<{ message: string, deletedGenre: any }> {
+        try {
+            const deletedGenre = await prisma.$transaction(async (prisma) => {
+                await prisma.movieGenres.deleteMany({ where: { genreId: id } });
+                return prisma.genre.delete({ where: { id } });
+            });
+
+            return {
+                message: `Genre with ID ${id} deleted successfully`,
+                deletedGenre,
+            };
+        } catch (error) {
+            throw new Error(`Could not delete genre with ID ${id}`);
+        }
+    }
 }
 
 const genreService = new GenreService();

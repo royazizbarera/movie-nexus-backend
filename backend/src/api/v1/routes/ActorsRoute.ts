@@ -1,17 +1,42 @@
 import express from "express";
 import actorController from "../controllers/ActorController";
-import movieController from "../controllers/MovieController";
+import {verifyAdmin} from "../middlewares/verifyAdmin";
 
 const router = express.Router();
 
+/**
+ * @route GET /actors
+ * @description Get a list of all actors
+ * @access Public
+ */
 router.get("/", actorController.getActors);
 
+/**
+ * @route GET /actors/:id
+ * @description Get a single actor by ID
+ * @access Public
+ */
 router.get("/:id", actorController.getActorById);
 
-router.post("/", actorController.createActor);
+/**
+ * @route POST /actors
+ * @description Create a new actor
+ * @access Private
+ */
+router.post("/", verifyAdmin, actorController.createActor);
 
-router.delete("/:id", actorController.deleteActorById);
+/**
+ * @route DELETE /actors/:id
+ * @description Delete an actor by ID
+ * @access Private
+ */
+router.delete("/:id", verifyAdmin, actorController.deleteActorById);
 
-router.put("/:id", actorController.updateActorById);
+/**
+ * @route PUT /actors/:id
+ * @description Update an actor by ID
+ * @access Private
+ */
+router.put("/:id", verifyAdmin, actorController.updateActorById);
 
 export default router;

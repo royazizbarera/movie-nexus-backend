@@ -1,33 +1,42 @@
 import express from "express";
 import awardController from "../controllers/AwardController";
-import HttpStatus from "../config/constants/HttpStatus";
-import ResponseApi from "../config/ResponseApi";
+import {verifyAdmin} from "../middlewares/verifyAdmin";
 
 const router = express.Router();
 
+/**
+ * @route GET /awards
+ * @description Get a list of all awards
+ * @access Public
+ */
 router.get("/", awardController.getAwards);
 
-router.get("/:id", async (req, res) => {
-  try {
-    const award = await awardController.getAwardById(parseInt(req.params.id));
-    return res.json(
-      ResponseApi({
-        code: HttpStatus.OK,
-        message: "Award fetched successfully",
-        data: award,
-        version: 1.0,
-      })
-    );
-  } catch (error) {
-    return res.json(
-      ResponseApi({
-        code: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: "Failed to fetch award",
-        errors: error,
-        version: 1.0,
-      })
-    );
-  }
-});
+/**
+ * @route GET /awards/:id
+ * @description Get a single award by ID
+ * @access Public
+ */
+router.get("/:id", awardController.getAwardById);
+
+/**
+ * @route POST /awards
+ * @description Create a new award
+ * @access Private
+ */
+router.post("/", verifyAdmin, awardController.createAward);
+
+/**
+ * @route PUT /awards/:id
+ * @description Update an award by ID
+ * @access Private
+ */
+router.put("/:id", verifyAdmin, awardController.updateAwardById);
+
+/**
+ * @route DELETE /awards/:id
+ * @description Delete an award by ID
+ * @access Private
+ */
+router.delete("/:id", verifyAdmin, awardController.deleteAwardById);
 
 export default router;

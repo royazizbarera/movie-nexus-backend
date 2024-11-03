@@ -9,4 +9,6 @@ export default interface SearchParams {
     sortOrder?: "asc" | "desc";
     filters?: any[];
     genre?: string;
+    rating?: number;
+    userId?: number;
 }

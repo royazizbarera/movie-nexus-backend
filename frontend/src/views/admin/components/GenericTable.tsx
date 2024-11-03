@@ -62,15 +62,15 @@ export interface Column<T> {
   label: string;
   key: keyof T;
   type:
-  | "string"
-  | "number"
+    | "string"
+    | "number"
     | "date"
     | "boolean"
     | "string[]"
     | "number[]"
     | "string_autocomplete";
-    componentShow?: "Chip" | "Avatar" | "Icon" | "Button";
-    readonly?: boolean;
+  componentShow?: "Chip" | "Avatar" | "Icon" | "Button";
+  readonly?: boolean;
   width?: number | string;
 }
 
@@ -209,9 +209,37 @@ export default function GenericTable<T>({
     if (!selectedItem) return;
 
     try {
-      await onDelete(selectedItem);
+      const success = await onDelete(selectedItem);
+      success
+        ? handleOpenSnackbar({
+            ...defaultSnackbarState,
+            open: true,
+            title: "Item deleted successfully",
+            key: "item_deleted_success",
+            color: "warning",
+            variant: "solid",
+            autoHideDuration: 5000,
+          })
+        : handleOpenSnackbar({
+            ...defaultSnackbarState,
+            open: true,
+            title: "Failed to delete item",
+            key: "failed_delete_item",
+            color: "danger",
+            variant: "solid",
+            autoHideDuration: 5000,
+          });
     } catch (error) {
       console.error("Failed to delete item", error);
+      handleOpenSnackbar({
+        ...defaultSnackbarState,
+        open: true,
+        title: "Failed to delete item",
+        key: "failed_delete_item",
+        color: "danger",
+        variant: "solid",
+        autoHideDuration: 5000,
+      });
     } finally {
       setOpenDeleteItemModal(false);
     }
@@ -239,11 +267,31 @@ export default function GenericTable<T>({
           }
         }
       }
+      // open snackbar success
+      handleOpenSnackbar({
+        ...defaultSnackbarState,
+        open: true,
+        title: "Items deleted successfully",
+        key: "items_deleted_success",
+        color: "warning",
+        variant: "solid",
+        autoHideDuration: 5000,
+      });
 
       // Reset selected setelah berhasil dihapus
       setSelected([]);
     } catch (error) {
       console.error("Failed to delete items", error);
+      // open snackbar error
+      handleOpenSnackbar({
+        ...defaultSnackbarState,
+        open: true,
+        title: "Failed to delete items",
+        key: "failed_delete_items",
+        color: "danger",
+        variant: "solid",
+        autoHideDuration: 5000,
+      });
     } finally {
       setOpenDeleteItemsModal(false);
     }
