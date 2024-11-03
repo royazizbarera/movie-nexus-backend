@@ -15,7 +15,7 @@ class CountryController {
     async getCountries(req: Request, res: Response): Promise<Response> {
         try {
             const parsedPage = parseInt(req.query.page as string) || 1;
-            const parsedPageSize = parseInt(req.query.pageSize as string) || 24;
+            const parsedPageSize = parseInt(req.query.pageSize as string) || undefined;
 
             const {
                 searchTerm = '',

@@ -21,7 +21,7 @@ class AwardController extends BaseController {
 
   // Menambah film baru
   public async addAward(award: AwardModel) {
-    return this.post<AwardModel>('/', {award: award, id: undefined});
+    return this.post<AwardModel>('/', {...award, id: undefined});
   }
 
   // Mengubah data film, hanya untuk admin
