@@ -44,14 +44,14 @@ class ActorService {
      */
     async getActors({
                         page = 1,
-                        pageSize = 24,
+                        pageSize = undefined,
                         params,
                     }: {
         page: number | undefined;
         pageSize: number | undefined;
         params: SearchParams;
     }): Promise<any[]> {
-        const skip = (page - 1) * pageSize;
+        const skip = (page - 1) * (pageSize || 0);
         const { searchTerm, country, sortBy, sortOrder } = params;
         const whereClause: any = { AND: [] };
 

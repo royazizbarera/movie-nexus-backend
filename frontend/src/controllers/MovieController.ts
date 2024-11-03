@@ -9,7 +9,9 @@ class MovieController extends BaseController {
   }
 
   // Mendapatkan daftar film dengan pagination
-  public async getMovies(movieFilterParamsModel?: MovieParamsModel | undefined) {
+  public async getMovies(
+    movieFilterParamsModel?: MovieParamsModel | undefined
+  ) {
     const params = { ...movieFilterParamsModel };
     return this.get<MovieModel[]>("/", params);
   }
@@ -21,13 +23,21 @@ class MovieController extends BaseController {
 
   // Menambah film baru
   public async addMovie(movie: MovieModel) {
-    return this.post<MovieModel>("/", movie);
+    return this.post<MovieModel>("/", {
+      ...movie,
+      id: undefined,
+      rating: undefined,
+    });
   }
 
   // Mengubah data film, hanya untuk admin
   public async updateMovie(id: number, movie: MovieModel) {
     const { user } = useAuthStore.getState();
-    return this.put<MovieModel>(`/${id}`, movie, user!.role!.toString());
+    return this.put<MovieModel>(
+      `/${id}`,
+      { ...movie, id: undefined },
+      user!.role!.toString()
+    );
   }
 
   // Menghapus film berdasarkan ID, hanya untuk admin

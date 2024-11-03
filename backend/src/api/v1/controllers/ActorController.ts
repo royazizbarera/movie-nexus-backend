@@ -16,7 +16,7 @@ class ActorController {
         try {
             const {
                 page = "1",
-                pageSize = "24",
+                pageSize = undefined,
                 searchTerm = '',
                 country = '',
                 sortBy = '',
@@ -24,7 +24,7 @@ class ActorController {
             } = req.query;
 
             const parsedPage = parseInt(page as string, 10) || 1;
-            const parsedPageSize = parseInt(pageSize as string, 10) || 24;
+            const parsedPageSize = parseInt(pageSize as string, 10) || undefined;
 
             const [actors, totalItems] = await actorService.getActors({
                 page: parsedPage,
@@ -47,7 +47,7 @@ class ActorController {
                         page: parsedPage,
                         pageSize: parsedPageSize,
                         totalItems,
-                        totalPages: Math.ceil(totalItems / parsedPageSize),
+                        totalPages: Math.ceil(totalItems / (parsedPageSize || 0)),
                     },
                 })
             );

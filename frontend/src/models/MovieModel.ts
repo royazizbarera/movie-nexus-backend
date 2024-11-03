@@ -31,8 +31,8 @@ export interface MovieModel {
 
   genres: GenreModel[];
   actors: ActorModel[];
-  awards: AwardModel[];
-  reviews: Review[] | null;
+  awards?: AwardModel[] | undefined;
+  reviews?: Review[] | null;
 }
 
 export interface MovieModelTable {
@@ -86,7 +86,7 @@ export function convertMovieModelToTable(movie: MovieModel): MovieModelTable {
     director: movie.director ? movie.director.name : "Unknown", // Default to "Unknown" if director is null
     genres: movie.genres.map((g) => g.name), // Extract genre names from genres array
     actors: movie.actors.map((a) => a.name), // Extract actor names from actors array
-    awards: movie.awards.map((a) => a.name), // Extract award names from awards array
+    awards: movie.awards ? movie.awards.map((a) => a.name) : [], // Extract award names from awards array or empty array if awards is null
     reviews: movie.reviews ? movie.reviews.map((r) => r.content) : [], // Extract review content from reviews array or empty array if reviews is null
   };
 }

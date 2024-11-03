@@ -129,6 +129,12 @@ export default function GenericTable<T>({
   const [selectedItem, setSelectedItem] = React.useState<T | null>(null);
   const [newItem, setNewItem] = React.useState<T>({} as T);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [multiSelectValues, setMultiSelectValues] = React.useState<{
+    [key: string]: string[];
+  }>({});
+  const [boolSelectValues, setBoolSelectValues] = React.useState<{
+    [key: string]: boolean;
+  }>({});
 
   // Modal state
   const [openAddModal, setOpenAddModal] = React.useState(false);
@@ -190,6 +196,16 @@ export default function GenericTable<T>({
 
   const handleOpenEditModal = (item: T) => {
     setSelectedItem(item);
+
+    // Populate multiSelectValues for `string[]` types
+    const newMultiSelectValues: { [key: string]: string[] } = {};
+    columns.forEach((col) => {
+      if (col.type === "string[]") {
+        newMultiSelectValues[col.key as string] = item[col.key] as string[];
+      }
+    });
+    setMultiSelectValues(newMultiSelectValues);
+
     setOpenEditModal(true);
   };
 
@@ -302,34 +318,44 @@ export default function GenericTable<T>({
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    // Mengambil data dari form menggunakan FormData
+    // Convert form data to JSON, excluding array fields
     const formData = new FormData(event.currentTarget);
-    const formJson = Object.fromEntries(formData.entries()); // Konversi FormData ke objek
+    const formJson = Object.fromEntries(formData.entries());
 
-    // Lakukan sesuatu dengan data yang sudah di-submit
-    console.log("Submitted data:", formJson);
+    // Overwrite array fields with values from multiSelectValues
+    const finalData = {
+      ...selectedItem,
+      ...formJson,
+      ...multiSelectValues,
+      ...boolSelectValues,
+    } as T;
+
+    console.log("Submitted edit data:", finalData);
+
     if (selectedItem && onEdit) {
       try {
-        const success = await onEdit({ ...selectedItem, ...formJson } as T); // Gabungkan data form dengan selectedItem
-        success
-          ? handleOpenSnackbar({
-              ...defaultSnackbarState,
-              open: true,
-              title: "Item updated successfully",
-              key: "item_updated_success",
-              color: "success",
-              variant: "solid",
-              autoHideDuration: 5000,
-            })
-          : handleOpenSnackbar({
-              ...defaultSnackbarState,
-              open: true,
-              title: "Failed to update item",
-              key: "failed_update_item",
-              color: "danger",
-              variant: "solid",
-              autoHideDuration: 5000,
-            });
+        const success = await onEdit(finalData);
+        if (success) {
+          handleOpenSnackbar({
+            ...defaultSnackbarState,
+            open: true,
+            title: "Item updated successfully",
+            key: "item_updated_success",
+            color: "success",
+            variant: "solid",
+            autoHideDuration: 5000,
+          });
+        } else {
+          handleOpenSnackbar({
+            ...defaultSnackbarState,
+            open: true,
+            title: "Failed to update item",
+            key: "failed_update_item",
+            color: "danger",
+            variant: "solid",
+            autoHideDuration: 5000,
+          });
+        }
       } catch (error) {
         console.error("Failed to update data", error);
       } finally {
@@ -350,11 +376,16 @@ export default function GenericTable<T>({
     const formJson = Object.fromEntries(formData.entries()); // Konversi FormData ke objek
 
     // Lakukan sesuatu dengan data yang sudah di-submit
-    console.log("Submitted data:", formJson);
+    console.log("Submitted add data:", formJson);
     console.info("New Item: ", newItem);
     if (newItem && onAdd) {
       try {
-        const success = await onAdd({ ...newItem, ...formJson } as T); // Gabungkan data form dengan newItem
+        const success = await onAdd({
+          ...newItem,
+          ...formJson,
+          ...multiSelectValues,
+          ...boolSelectValues,
+        } as T); // Gabungkan data form dengan newItem
         success
           ? handleOpenSnackbar({
               ...defaultSnackbarState,
@@ -474,7 +505,14 @@ export default function GenericTable<T>({
           <Checkbox
             readOnly={col.readonly}
             name={String(col.key)} // Menggunakan name untuk FormData
-            defaultChecked={value as boolean}
+            checked={boolSelectValues[col.key as string]} // Ensure a boolean value
+            onChange={(e) => {
+              const newValue = e.target.checked;
+              setBoolSelectValues((prev) => ({
+                ...prev,
+                [col.key as string]: newValue,
+              }));
+            }}
           />
         );
       case "string[]":
@@ -484,19 +522,26 @@ export default function GenericTable<T>({
             multiple
             options={options}
             name={String(col.key)} // Menggunakan name untuk FormData
-            defaultValue={value as string[]}
+            value={multiSelectValues[col.key as string] || []}
+            onChange={(e, value) => {
+              setMultiSelectValues((prev) => ({
+                ...prev,
+                [col.key as string]: value as string[],
+              }));
+            }}
             slotProps={{
               listbox: { sx: { zIndex: 30000 } },
             }}
           />
         );
+
       case "string_autocomplete":
         return (
           <Autocomplete
             readOnly={col.readonly}
             options={options}
             name={String(col.key)} // Menggunakan name untuk FormData
-            defaultValue={value as string}
+            value={value as string}
             slotProps={{
               listbox: { sx: { zIndex: 30000 } },
             }}
@@ -1009,13 +1054,14 @@ export default function GenericTable<T>({
               }}
             >
               <Stack spacing={2}>
-                {columns.map((col) => (
-                  <FormControl key={col.key as string}>
-                    {/* <FormLabel>{col.label}</FormLabel> */}
-                    {/* Pass options for multiple select */}
-                    {renderInputField(col, options[col.key as string] || [])}
-                  </FormControl>
-                ))}
+                {columns.map((col) =>
+                  col.readonly ? null : (
+                    <FormControl key={col.key as string}>
+                      <FormLabel>{col.label}</FormLabel>
+                      {renderInputField(col, options[col.key as string] || [])}
+                    </FormControl>
+                  )
+                )}
                 <Button type="submit">Submit</Button>
               </Stack>
             </form>

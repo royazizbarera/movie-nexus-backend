@@ -37,6 +37,8 @@ import {
 import movieController from "../../../controllers/MovieController";
 import { Modal, ModalClose, ModalOverflow } from "@mui/joy";
 import DetailMovieComponent from "../components/DetailMovieComponent";
+import { DirectorModel } from "../../../models/DirectorModel";
+import directorController from "../../../controllers/DirectorController";
 
 const columns: Column<MovieModelTable>[] = [
   {
@@ -85,9 +87,19 @@ export default function AdminMoviePage() {
   });
 
   const [genres, setGenres] = React.useState<string[]>([]);
+  const [realGenres, setRealGenres] = React.useState<GenreModel[]>([]);
+
   const [actors, setActors] = React.useState<string[]>([]);
+  const [realActors, setRealActors] = React.useState<ActorModel[]>([]);
+
   const [awards, setAwards] = React.useState<string[]>([]);
+  const [realAwards, setRealAwards] = React.useState<AwardModel[]>([]);
+
   const [countries, setCountries] = React.useState<string[]>([]);
+  const [realCountries, setRealCountries] = React.useState<CountryModel[]>([]);
+
+  const [directors, setDirectors] = React.useState<string[]>([]);
+  const [realDirectors, setRealDirectors] = React.useState<DirectorModel[]>([]);
 
   const [openDetailItem, setOpenDetailItem] = React.useState(false);
   // selected item
@@ -119,6 +131,7 @@ export default function AdminMoviePage() {
     try {
       const response = await genreController.getGenres();
       const data = response.data;
+      setRealGenres(data);
       setGenres(
         data.map((genre: GenreModel) => {
           return genre.name;
@@ -131,6 +144,7 @@ export default function AdminMoviePage() {
     try {
       const response = await actorController.getActors();
       const data = response.data;
+      setRealActors(data);
       setActors(
         data.map((actor: ActorModel) => {
           return actor.name;
@@ -145,6 +159,7 @@ export default function AdminMoviePage() {
     try {
       const response = await awardController.getAwards();
       const data = response.data;
+      setRealAwards(data);
       setAwards(
         data.map((award: AwardModel) => {
           return award.name;
@@ -157,6 +172,7 @@ export default function AdminMoviePage() {
     try {
       const response = await countryController.getCountries();
       const data = response.data;
+      setRealCountries(data);
       setCountries(
         data.map((country: CountryModel) => {
           return country.name;
@@ -165,40 +181,149 @@ export default function AdminMoviePage() {
     } catch (error) {}
   };
 
+  const getDirectors = async () => {
+    try {
+      const response = await directorController.getDirectors();
+      const data = response.data;
+      setRealDirectors(data);
+      setDirectors(
+        data.map((director: DirectorModel) => {
+          return director.name;
+        })
+      );
+    } catch (error) {
+      console.error("Error fetching directors:", error);
+    }
+  };
+
   React.useEffect(() => {
     getGenres();
     getActors();
     getAward();
     getCountries();
+    getDirectors();
   }, []);
 
   React.useEffect(() => {
     fetchMovies(movieParams); // Pass current page to fetchMovies
   }, [movieParams]);
 
-  const handleEditMovie = async (updatedMovie: MovieModelTable) => {
+  // TODO: ADD Movie
+  const handleAddMovie = async (newMovie: MovieModelTable) => {
     try {
-      // Kirim data yang telah diubah ke endpoint tertentu
-      // const response = await axios.put(`http://localhost:3001/movie/${updatedMovie.id}`, updatedMovie);
-      // console.log('Movie updated successfully:', response.data);
-      console.info("update movie: ", updatedMovie);
+      const parsedMovie: MovieModel = {
+        id: newMovie.id,
+        title: newMovie.title,
+        synopsis: newMovie.synopsis,
+        posterUrl: newMovie.posterUrl,
+        backdropUrl: newMovie.backdropUrl,
+        videoUrl: newMovie.videoUrl,
+        releaseDate: newMovie.releaseDate,
+        approvalStatus: newMovie.approvalStatus,
+        rating: newMovie.rating,
+        country: realCountries.find((c) => c.name === newMovie.country) || null,
+        countryCode:
+          realCountries.find((c) => c.name === newMovie.country)?.code || "",
+        director:
+          realDirectors.find((d) => d.name === newMovie.director) || null,
+        directorId:
+          realDirectors.find((d) => d.name === newMovie.director)?.id || 0,
+        genres: newMovie.genres.map((genre) => {
+          return (
+            realGenres.find((g) => g.name === genre)! || { id: 0, name: "" }
+          );
+        }),
+        actors: newMovie.actors.map((actor) => {
+          return realActors.find((a) => a.name === actor)!;
+        }),
+        awards:
+          newMovie.awards.map((award) => {
+            return realAwards.find((a) => a.name === award)!;
+          }) || undefined,
+        reviews: null,
+      };
+      console.info("parsed movie: ", parsedMovie);
+      const response = await movieController.addMovie(parsedMovie);
+      console.info("add movie: ", parsedMovie);
+      fetchMovies(movieParams);
+      if (response.code !== 201) {
+        return false;
+      }
+      return true;
     } catch (error) {
-      console.error("Error updating movie:", error);
+      console.error("Error adding movie:", error);
+      return false;
     }
   };
 
+  // TODO: UPDATE Movie
+  const handleEditMovie = async (updatedMovie: MovieModelTable) => {
+    try {
+      const parsedMovie: MovieModel = {
+        id: updatedMovie.id,
+        title: updatedMovie.title,
+        synopsis: updatedMovie.synopsis,
+        posterUrl: updatedMovie.posterUrl,
+        backdropUrl: updatedMovie.backdropUrl,
+        videoUrl: updatedMovie.videoUrl,
+        releaseDate: updatedMovie.releaseDate,
+        approvalStatus: updatedMovie.approvalStatus,
+        rating: updatedMovie.rating,
+        country:
+          realCountries.find((c) => c.name === updatedMovie.country) || null,
+        countryCode:
+          realCountries.find((c) => c.name === updatedMovie.country)?.code ||
+          "",
+        director:
+          realDirectors.find((d) => d.name === updatedMovie.director) || null,
+        directorId:
+          realDirectors.find((d) => d.name === updatedMovie.director)?.id || 0,
+        genres: updatedMovie.genres.map((genre) => {
+          return (
+            realGenres.find((g) => g.name === genre)! || { id: 0, name: "" }
+          );
+        }),
+        actors: updatedMovie.actors.map((actor) => {
+          return realActors.find((a) => a.name === actor)!;
+        }),
+        awards:
+          updatedMovie.awards.map((award) => {
+            return realAwards.find((a) => a.name === award)!;
+          }) || undefined,
+        reviews: null,
+      };
+      const response = await movieController.updateMovie(
+        updatedMovie.id,
+        parsedMovie
+      );
+      fetchMovies(movieParams);
+      if (response.code !== 200) {
+        return false;
+      }
+      console.info("edit movie: ", parsedMovie);
+
+      console.info("update movie: ", updatedMovie);
+      return true;
+    } catch (error) {
+      console.error("Error updating movie:", error);
+      return false;
+    }
+  };
+
+  // TODO: DELETE Movie
   const handleDeleteMovie = async (movie: MovieModelTable) => {
     try {
       const response = await movieController.deleteMovie(movie.id);
-      setMovies((prevMovies) => prevMovies.filter((m) => m.id !== movie.id));
-      setPagination((prevPagination) => ({
-        ...prevPagination,
-        totalItems: prevPagination.totalItems - 1,
-      }));
+      fetchMovies(movieParams);
+      if (response.code !== 200) {
+        return false;
+      }
       console.log("Movie deleted successfully:", response.message);
       console.info("delete movie with id: ", movie.id);
+      return true;
     } catch (error) {
       console.error("Error deleting movie:", error);
+      return false;
     }
   };
   const handlePageChange = async (newPage: number) => {
@@ -245,7 +370,7 @@ export default function AdminMoviePage() {
               genres: genres,
               actors: actors,
               awards: awards,
-              director: ["Pete Docter"],
+              director: directors,
               country: countries,
             }}
             filters={{
@@ -264,6 +389,7 @@ export default function AdminMoviePage() {
               sortOrder: SORT_ORDER_DROPDOWN,
               pageSize: PAGE_SIZE_DROPDOWN,
             }}
+            onAdd={handleAddMovie}
             onEdit={handleEditMovie}
             onDelete={handleDeleteMovie}
             onPageChange={handlePageChange}
