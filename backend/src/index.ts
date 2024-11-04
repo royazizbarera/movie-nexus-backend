@@ -76,7 +76,11 @@ app.route("/api/v1/insertDummyData").get(async (req, res) => {
     res.status(500).send(error); // Kirim respons error jika terjadi kesalahan
   }
 });
-// Initialize middleware
+
+// hello world
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
 
 // Initialize routes
 app.use("/api/v1", routers);
