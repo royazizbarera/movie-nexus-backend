@@ -31,14 +31,15 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // Check if the incoming request origin is in the allowedOrigins array
-      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    // origin: function (origin, callback) {
+    //   // Check if the incoming request origin is in the allowedOrigins array
+    //   if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    //     callback(null, true);
+    //   } else {
+    //     callback(new Error("Not allowed by CORS"));
+    //   }
+    // },
+    origin: "*",
     credentials: true, // Izinkan pengiriman cookie lintas domain
     methods: ["GET", "POST", "PUT", "DELETE"], // Izinkan metode HTTP yang digunakan
   })
