@@ -84,7 +84,10 @@ app.route("/api/v1/insertDummyData").get(async (req, res) => {
 app.get("/", (req, res) => {
   res.send("Hello World!");
 });
-
+// Route test untuk memastikan `/api` tersedia
+app.get("/api", (req, res) => {
+  res.send("API is working!");
+});
 // Initialize routes
 app.use("/api/v1", routers);
 
