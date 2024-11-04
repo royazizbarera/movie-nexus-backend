@@ -26,6 +26,7 @@ const allowedOrigins = [
   "http://localhost:3000", // React app 1 URL
   "http://localhost:3002", // React app 2 URL
   "https://completely-safe-moth.ngrok-free.app", // Ngrok URL
+  "https://movie-nexus-kappa.vercel.app", // Vercel URL
 ];
 
 app.use(
