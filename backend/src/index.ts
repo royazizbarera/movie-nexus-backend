@@ -40,6 +40,7 @@ app.use(
       }
     },
     credentials: true, // Izinkan pengiriman cookie lintas domain
+    methods: ["GET", "POST", "PUT", "DELETE"], // Izinkan metode HTTP yang digunakan
   })
 );
 
